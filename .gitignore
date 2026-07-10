@@ -218,6 +218,7 @@ results/
 logs/
 outputs_cache/
 output/
+.worktrees/
 test_codex_output.png
 test_runs/
 
