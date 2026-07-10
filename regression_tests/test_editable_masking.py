@@ -1,0 +1,59 @@
+import sys
+from pathlib import Path
+
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.editable_pptx.masking import (
+    changed_outside_mask,
+    composite_masked_edit,
+    make_api_edit_mask,
+)
+
+
+def _solid(size, color):
+    return Image.new("RGB", size, color)
+
+
+def _black_mask(size):
+    return Image.new("L", size, 0)
+
+
+def test_composite_changes_only_white_mask_pixels():
+    original = _solid((4, 4), (10, 20, 30))
+    edited = _solid((4, 4), (200, 210, 220))
+    mask = _black_mask((4, 4))
+    mask.putpixel((2, 1), 255)
+
+    result = composite_masked_edit(original, edited, mask)
+
+    assert result.getpixel((2, 1)) == (200, 210, 220)
+    assert result.getpixel((0, 0)) == (10, 20, 30)
+    assert changed_outside_mask(original, result, mask) == 0
+
+
+def test_api_mask_makes_replace_region_transparent():
+    internal = _black_mask((2, 2))
+    internal.putpixel((1, 0), 255)
+
+    api_mask = make_api_edit_mask(internal)
+
+    assert api_mask.mode == "RGBA"
+    assert api_mask.getpixel((1, 0))[3] == 0
+    assert api_mask.getpixel((0, 0))[3] == 255
+
+
+def test_size_mismatch_is_rejected():
+    original = _solid((4, 4), (10, 20, 30))
+    edited = _solid((3, 4), (200, 210, 220))
+    mask = _black_mask((4, 4))
+
+    try:
+        composite_masked_edit(original, edited, mask)
+    except ValueError as exc:
+        assert "尺寸" in str(exc)
+    else:
+        raise AssertionError("mismatched image sizes should fail")
