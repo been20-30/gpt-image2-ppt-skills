@@ -69,6 +69,35 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 ---
 
+## 🚀 快速开始
+
+### 1. 让 AI 安装 Skill
+
+把下面这段话发给 Claude Code、Codex、OpenClaw、Cursor、Trae、Hermes Agent，或其他支持 Skills 的 AI 助手：
+
+> 帮我安装 gpt-image2-ppt-skills：<br>
+> https://raw.githubusercontent.com/JuneYaooo/gpt-image2-ppt-skills/main/docs/install.md
+
+AI 会根据当前环境完成安装并提示你重启。
+
+### 2. 安装后直接说需求
+
+**普通生成**
+
+> 帮我做一份关于「AI 如何改变内容创作」的 6 页 PPT，先生成一页封面给我确认，整体风格要有高级科技感。
+
+**仿模板**
+
+> 我上传了 `company-template.pptx`，请参考它的版式、配色和视觉语言，做一份关于「年度产品战略」的 8 页 PPT。
+
+**可编辑交付**
+
+> 帮我生成一份可编辑模式的 PPT。文字和基础图形要能直接修改，复杂主视觉要能单独移动，同时尽量保留 gpt-image-2 的完整设计感。
+
+AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图片、PPTX 和输出目录交给你。
+
+---
+
 ## ✨ 能做什么
 
 - 🎨 **十套精选风格 + 扩展风格库** — 内置 Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Riso / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration，并持续补充优质风格
@@ -81,18 +110,6 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 - 🧾 **可追踪、可回滚** — 修改过哪些页、生成过哪些版本都能追踪，方便继续改
 - 🖼️ **真实素材双模式** — 用户给的真实图默认保真嵌入；用户明确允许时，也可以作为参考图融合重绘
 - 🧩 **可编辑模式（默认关闭）** — 用户明确要求时，把文字、基础图形、连接线和复杂主视觉拆成可单独编辑的 PowerPoint 对象
-
-## 🆕 更新记录
-
-- **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
-- **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；如果用户明确说“不需要贴原图 / 可以重绘 / 更重视整体效果”，也可以作为参考图融合重绘。医疗影像、诊断图、论文图表、财务表格、法律证据、精确 UI 截图不建议重绘，生成后需要人工核对。
-- **2026-05-26 · 扩展风格库**：从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格，覆盖商务、学术、教育、餐饮、时尚、医疗、环保等场景。
-
-## 🧩 整体实现流程
-
-本项目采用“AI 生成整页视觉稿 + PPT 打包”的路线；真实素材默认保真嵌入，用户明确允许时可作为参考图融合重绘。完整流程图、可靠性边界和素材处理规则见：[`docs/ppt-implementation-logic.md`](./docs/ppt-implementation-logic.md)。
-
-如果用户只有一个模糊主题，还没有完整大纲，agent 可先参考 [`examples/`](./examples/) 里的 Prompt Recipes 生成第一版 `slides_plan.md`，让用户确认页数和文案后，再转成 `slides_plan.json` 并进入正式出图流程。
 
 ## ✅ 适合哪些用户场景
 
@@ -157,20 +174,9 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 ---
 
-## 🚀 安装
+## 🛠 手动安装与高级配置
 
-### 方式一：让 AI 自己装（推荐）
-
-把下面这段 prompt 丢给你的 AI 助手（Claude Code / OpenClaw / Codex / Cursor / Trae / Hermes Agent，或其他支持 Skills 的 agent 都行），它会自动完成安装：
-
-```
-帮我安装 gpt-image2-ppt-skills：
-https://raw.githubusercontent.com/JuneYaooo/gpt-image2-ppt-skills/main/docs/install.md
-```
-
-agent 会自己 clone 仓库、按当前运行环境选择安装目标、提示你重启。
-
-### 方式二：手动安装
+普通用户优先使用上面的自然语言安装方式。需要自己管理仓库和环境时，可以手动安装：
 
 ```bash
 git clone git@github.com:JuneYaooo/gpt-image2-ppt-skills.git
@@ -184,6 +190,9 @@ bash install_as_skill.sh --target codex    # Codex
 
 - Claude Code: `~/.claude/skills/gpt-image2-ppt-skills/`
 - Codex: `~/.codex/skills/gpt-image2-ppt-skills/`
+
+<details>
+<summary><strong>API 直连与密钥配置</strong></summary>
 
 如果你走 API 直连模式，需要给 agent 注入环境变量。推荐使用当前 agent 框架的标准配置，而不是把密钥写进业务项目根目录 `.env`：
 
@@ -206,7 +215,10 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🪄 模板克隆模式额外需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。直接告诉 AI 使用你提供的 `.pptx` 模板即可，Skill 会先自动检查本机渲染能力；如果当前环境不支持，AI 会提示安装可用后端或改用模板页面图片。
 
-### 模板克隆的 Vision 分析（可选）
+</details>
+
+<details>
+<summary><strong>模板克隆的 Vision 分析</strong></summary>
 
 模板克隆模式下，skill 需要先"看懂"你的 `.pptx` 模板的视觉风格。**如果你的 AI 助手本身就是多模态的**（Claude Code 走 Claude Opus/Sonnet，Codex 走 GPT 多模态等），agent 会直接自己看图抽取风格，生成带 `reference_image` 的 `template_profile.json` 后通过 `--template-profile` 传给 CLI，**不需要额外配置**。
 
@@ -221,21 +233,24 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 > 支持任意兼容 OpenAI `/v1/chat/completions` 格式的多模态模型（Gemini / GPT-4o / Claude 等），与图片生成的 `gpt-image-2` 完全解耦——换 vision provider 不影响出图。
 
+</details>
+
 ---
 
-## 🛠 在 Claude Code 里怎么用
+## 📚 技术文档
 
-装完直接跟 Claude 说人话就行：
+- [SKILL.md](./SKILL.md) — Skill 的权威工作流、行为规则和高级调用说明
+- [安装说明](./docs/install.md) — 不同 Agent 的安装方式
+- [PPT 实现逻辑](./docs/ppt-implementation-logic.md) — 图片生成、真实素材和 PPTX 打包流程
+- [真实素材覆盖逻辑](./docs/external_image_overlay_logic.txt) — 外部图片的槽位规划与后贴链路
+- [编辑能力测评](./docs/edit_guide.md) — 可稳定修改的内容、限制和验收建议
+- [风格库](./docs/distilled-styles.md) — 内置及扩展风格预览
 
-> 帮我用 **gpt-image2-ppt** 生成一份关于 **[你的主题]** 的 5 页 PPT，风格用 `dark-aurora`。
+## 🆕 更新记录
 
-仿模板同理：
-
-> 我这有一个 `company-template.pptx`，帮我按这个模板做一份关于 **[你的主题]** 的 5 页 PPT。
-
-Claude 会自己写 `slides_plan`、先出一页封面让你确认、再跑全量，把输出目录和 `.pptx` 路径告诉你。
-
-> 想自己写脚本调 CLI 而不走 agent？看 [`SKILL.md`](./SKILL.md)，CLI 参数、文件布局都在那。
+- **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
+- **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；用户明确允许时，也可以作为参考图融合重绘。
+- **2026-05-26 · 扩展风格库**：从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格，覆盖商务、学术、教育、餐饮、时尚、医疗、环保等场景。
 
 ---
 

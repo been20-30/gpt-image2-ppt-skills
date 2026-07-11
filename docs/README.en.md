@@ -66,6 +66,35 @@ Object-level reconstruction is used only when the user explicitly asks for edita
 
 ---
 
+## 🚀 Quick start
+
+### 1. Ask your AI assistant to install the Skill
+
+Send this to Claude Code, Codex, OpenClaw, Cursor, Trae, Hermes Agent, or another Skill-compatible assistant:
+
+> Please install gpt-image2-ppt-skills:<br>
+> https://raw.githubusercontent.com/JuneYaooo/gpt-image2-ppt-skills/main/docs/install.md
+
+The assistant installs it for the current environment and tells you when to restart.
+
+### 2. Describe the deck you want
+
+**Generate a new deck**
+
+> Make a 6-slide deck about “How AI changes content creation.” Show me one cover first, and use a refined high-tech visual direction.
+
+**Follow a template**
+
+> I uploaded `company-template.pptx`. Follow its layout, palette, and visual language to make an 8-slide deck about our annual product strategy.
+
+**Request an editable deliverable**
+
+> Create this deck in editable mode. Keep text and basic graphics directly editable, make the complex hero visual independently movable, and preserve the complete `gpt-image-2` art direction.
+
+The assistant organizes the content, confirms one visual sample, generates the full deck, and returns the images, PPTX, and output location.
+
+---
+
 ## ✨ What it does
 
 - 🎨 **10 curated styles + an expanded style library** — built-ins include Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Risograph / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration; on 2026-05-26, 22 additional high-quality styles were selected from 500+ publicly available PPT templates
@@ -143,20 +172,9 @@ Summary:
 
 ---
 
-## 🚀 Install
+## 🛠 Manual install and advanced configuration
 
-### Option 1: let your AI install it (recommended)
-
-Paste this prompt into your AI assistant (Claude Code / OpenClaw / Codex / Cursor / Trae / Hermes Agent, or any other agent that supports Skills) and it will handle the install:
-
-```
-Please install gpt-image2-ppt-skills for me:
-https://raw.githubusercontent.com/JuneYaooo/gpt-image2-ppt-skills/main/docs/install.md
-```
-
-The agent will clone the repo, run the install script, ask for an API key only when direct API mode is needed, and tell you to restart.
-
-### Option 2: manual install
+Most users should use the natural-language installation shown above. Use manual installation when you need to manage the repository and environment yourself:
 
 ```bash
 git clone git@github.com:JuneYaooo/gpt-image2-ppt-skills.git
@@ -170,6 +188,9 @@ The script installs the skill into the selected agent directory:
 
 - Claude Code: `~/.claude/skills/gpt-image2-ppt-skills/`
 - Codex: `~/.codex/skills/gpt-image2-ppt-skills/`
+
+<details>
+<summary><strong>Direct API and secret configuration</strong></summary>
 
 If you use direct API mode, inject environment variables through your agent
 framework instead of writing secrets into the caller project's root `.env`:
@@ -193,7 +214,10 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🪄 Template-clone mode additionally needs an executable PPTX renderer such as Windows PowerPoint, macOS Keynote, or LibreOffice. Simply ask the AI to use your `.pptx` template; the Skill checks local rendering support first and, when unavailable, explains how to install a compatible renderer or use exported template-page images instead.
 
-### Vision analysis for template clone (optional)
+</details>
+
+<details>
+<summary><strong>Vision analysis for template clone</strong></summary>
 
 In template-clone mode, the skill needs to "see" your `.pptx` template's visual style first. **If your AI assistant is already multimodal** (Claude Code with Claude Opus/Sonnet, Codex with GPT multimodal, etc.), the agent will analyze the visual style directly and generate a `template_profile.json` with `reference_image` to pass to the CLI with `--template-profile`. **No extra configuration needed.**
 
@@ -208,21 +232,24 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 > Supports any multimodal model compatible with the OpenAI `/v1/chat/completions` format (Gemini / GPT-4o / Claude, etc.). Fully decoupled from `gpt-image-2` — switching the vision provider won't affect image generation.
 
+</details>
+
 ---
 
-## 🛠 How to use inside Claude Code
+## 📚 Technical documentation
 
-Once installed, just say it in plain English:
+- [SKILL.md](../SKILL.md) — authoritative workflow, behavior rules, and advanced usage
+- [Installation guide](./install.md) — installation across supported agents
+- [PPT implementation logic](./ppt-implementation-logic.md) — image generation, real assets, and PPTX packaging
+- [External-image overlay logic](./external_image_overlay_logic.txt) — slot planning and source-image overlay flow
+- [Editing capability report](./edit_guide.md) — reliable edit cases, limitations, and review guidance
+- [Style library](./distilled-styles.md) — built-in and expanded style previews
 
-> Use **gpt-image2-ppt** to make a 5-slide deck about **[your topic]**, style = `dark-aurora`.
+## 🆕 Changelog
 
-Template clone, same shape:
-
-> I have a `company-template.pptx` — make a 5-slide deck about **[your topic]** using that template.
-
-Claude will write the `slides_plan`, generate a cover first for you to approve, then run the full deck and hand back the `.pptx` path.
-
-> Prefer to call the CLI yourself instead of going through an agent? See [`SKILL.md`](../SKILL.md) — CLI flags and file layout live there.
+- **2026-07-11 · Editable mode** — Explicit editable-delivery requests can reconstruct complete visual masters as native text, shapes, connectors, and independent image layers. Overlapping assets follow the A1 original-pixel extraction → A2 occlusion completion → B AI separation/regeneration route. Default behavior is unchanged.
+- **2026-05-31 · Two modes for real assets** — Product screenshots, logos, charts, tables, medical images, and evidence screenshots are preserved as independent source-image objects by default; users can explicitly allow reference-based redraws.
+- **2026-05-26 · Expanded style library** — Added 22 selected styles covering business, academic, education, food, fashion, healthcare, and sustainability presentations.
 
 ---
 

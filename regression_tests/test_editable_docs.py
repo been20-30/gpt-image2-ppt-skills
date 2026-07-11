@@ -65,3 +65,36 @@ def test_local_process_docs_are_ignored_without_hiding_authoritative_docs():
     assert "/docs/reddit-launch-copy.md" in gitignore
     assert "/docs/superpowers/" in gitignore
     assert not any("external_image_overlay_logic.txt" in line for line in gitignore)
+
+
+def test_readme_follows_demo_quickstart_capabilities_advanced_order():
+    readme = Path("README.md").read_text(encoding="utf-8")
+    headings = (
+        "## 🎬 效果演示",
+        "## 🧩 可编辑模式示例",
+        "## 🚀 快速开始",
+        "## ✨ 能做什么",
+        "## ✅ 适合哪些用户场景",
+        "## 🛠 手动安装与高级配置",
+        "## 📚 技术文档",
+        "## 🆕 更新记录",
+    )
+    positions = [readme.index(heading) for heading in headings]
+    assert positions == sorted(positions)
+    assert "在 Claude Code 里怎么用" not in readme
+    assert "普通生成" in readme and "仿模板" in readme and "可编辑交付" in readme
+
+    english = Path("docs/README.en.md").read_text(encoding="utf-8")
+    english_headings = (
+        "## 🎬 Demo",
+        "## 🧩 Opt-in editable mode example",
+        "## 🚀 Quick start",
+        "## ✨ What it does",
+        "## ✅ Best-fit use cases",
+        "## 🛠 Manual install and advanced configuration",
+        "## 📚 Technical documentation",
+        "## 🆕 Changelog",
+    )
+    english_positions = [english.index(heading) for heading in english_headings]
+    assert english_positions == sorted(english_positions)
+    assert "How to use inside Claude Code" not in english
