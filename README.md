@@ -56,7 +56,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 </tr>
 </table>
 
-这个示例包含原生标题、标签、徽章、横幅和装饰形状；毛绒角色与粽子冰淇淋是一个可移动的独立图片层。
+这个示例的 PPTX 实测包含 **13 个可选对象**：5 个原生文本、6 个原生 shape、1 个 clean plate，以及 1 个可移动、可缩放的毛绒角色与粽子冰淇淋独立图片层。文字和基础图形可以直接在 PowerPoint 中修改，复杂主视觉仍保留 gpt-image-2 的完整质感。
 
 - [下载 Case 05 可编辑 PPTX](examples/editable-pptx/case05-summer-poster/editable.pptx)
 - [查看 scene、clean plate、透明素材和质量报告](examples/editable-pptx/case05-summer-poster/)

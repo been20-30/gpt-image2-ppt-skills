@@ -218,6 +218,10 @@ results/
 logs/
 outputs_cache/
 output/
+
+# Local launch copy and agent process artifacts
+/docs/reddit-launch-copy.md
+/docs/superpowers/
 .worktrees/
 test_codex_output.png
 test_runs/

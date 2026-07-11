@@ -8,6 +8,9 @@ def test_readme_documents_default_off_editable_example():
     assert "examples/editable-pptx/case05-summer-poster/original.png" in readme
     assert "examples/editable-pptx/case05-summer-poster/rendered.png" in readme
     assert "examples/editable-pptx/case05-summer-poster/editable.pptx" in readme
+    assert "13 个可选对象" in readme
+    assert "5 个原生文本" in readme
+    assert "6 个原生 shape" in readme
 
 
 def test_skill_contains_authoritative_editable_workflow():
@@ -26,3 +29,13 @@ def test_thin_agent_index_and_english_readme_link_editable_mode():
     assert "可编辑模式" in agents
     assert "opt-in editable" in english.lower()
     assert "case05-summer-poster/editable.pptx" in english
+    assert "13 selectable objects" in english
+    assert "5 native text boxes" in english
+    assert "6 native shapes" in english
+
+
+def test_local_process_docs_are_ignored_without_hiding_authoritative_docs():
+    gitignore = Path(".gitignore").read_text(encoding="utf-8").splitlines()
+    assert "/docs/reddit-launch-copy.md" in gitignore
+    assert "/docs/superpowers/" in gitignore
+    assert not any("external_image_overlay_logic.txt" in line for line in gitignore)

@@ -53,6 +53,8 @@ Editable mode still lets `gpt-image-2` create the complete art-directed slide fi
 </tr>
 </table>
 
+The PPTX contains **13 selectable objects**: 5 native text boxes, 6 native shapes, 1 clean plate, and 1 movable and resizable mascot-and-ice-cream image layer. Text and basic graphics remain directly editable in PowerPoint, while the complex hero artwork preserves the full `gpt-image-2` visual quality.
+
 - [Download the editable Case 05 PPTX](../examples/editable-pptx/case05-summer-poster/editable.pptx)
 - [Inspect its scene, clean plate, transparent layer, and quality report](../examples/editable-pptx/case05-summer-poster/)
 
