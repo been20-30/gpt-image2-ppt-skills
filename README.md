@@ -61,7 +61,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 - [下载 Case 05 可编辑 PPTX](examples/editable-pptx/case05-summer-poster/editable.pptx)
 - [查看完整 Case 05：原图、拆层素材、边缘检查和质量报告](examples/editable-pptx/case05-summer-poster/)
 
-这是一个 Skill，直接用自然语言告诉 AI 你的交付要求即可。例如：
+需要可编辑交付时，可以直接这样说：
 
 > 帮我生成一份可编辑模式的 PPT。文字和基础图形要能在 PowerPoint 里直接修改，复杂主视觉要能单独移动，同时尽量保留 gpt-image-2 的完整设计感。
 

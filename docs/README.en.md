@@ -58,7 +58,7 @@ The PPTX contains **13 selectable objects**: 5 native text boxes, 6 native shape
 - [Download the editable Case 05 PPTX](../examples/editable-pptx/case05-summer-poster/editable.pptx)
 - [View the complete Case 05 study: source visual, separated layer, edge checks, and quality report](../examples/editable-pptx/case05-summer-poster/)
 
-This is a Skill, so describe the delivery requirement directly in natural language. For example:
+When you need an editable deliverable, you can ask:
 
 > Create this deck in editable mode. Keep text and basic graphics directly editable in PowerPoint, make the complex hero visual independently movable, and preserve as much of the complete `gpt-image-2` art direction as possible.
 
