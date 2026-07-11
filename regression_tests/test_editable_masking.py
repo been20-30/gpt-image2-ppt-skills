@@ -11,6 +11,8 @@ from scripts.editable_pptx.masking import (
     changed_outside_mask,
     composite_masked_edit,
     make_api_edit_mask,
+    prepare_letterboxed_edit,
+    restore_letterboxed_edit,
 )
 
 
@@ -57,3 +59,19 @@ def test_size_mismatch_is_rejected():
         assert "尺寸" in str(exc)
     else:
         raise AssertionError("mismatched image sizes should fail")
+
+
+def test_letterbox_round_trip_preserves_slide_aspect_ratio():
+    original = Image.new("RGB", (160, 90), (12, 18, 42))
+    mask = Image.new("L", original.size, 0)
+    mask.putpixel((80, 45), 255)
+
+    canvas, canvas_mask, content_box = prepare_letterboxed_edit(original, mask, (160, 100))
+    restored = restore_letterboxed_edit(canvas, content_box, original.size)
+
+    assert canvas.size == (160, 100)
+    assert canvas_mask.size == (160, 100)
+    assert content_box == (0, 5, 160, 90)
+    assert canvas_mask.getpixel((80, 50)) == 255
+    assert restored.size == original.size
+    assert restored.getpixel((10, 10)) == original.getpixel((10, 10))
