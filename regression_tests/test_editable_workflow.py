@@ -84,6 +84,13 @@ def test_build_rejects_duplicate_declared_slide_numbers(tmp_path):
         build_editable_output(scene_dir, [1, 2], tmp_path / "session", "duplicate")
 
 
+def test_build_rejects_scene_number_that_does_not_match_filename(tmp_path):
+    scene_dir = tmp_path / "scenes"
+    _write_scene(scene_dir, 1, declared_number=2)
+    with pytest.raises(ValueError, match="文件名"):
+        build_editable_output(scene_dir, [1], tmp_path / "session", "mismatch")
+
+
 def test_discover_rejects_empty_request(tmp_path):
     with pytest.raises(ValueError, match="至少需要一个"):
         discover_scene_files(tmp_path, [])

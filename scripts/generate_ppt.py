@@ -2918,7 +2918,7 @@ def generate_pptx(
     return pptx_path
 
 
-def resolve_editable_scene_dir(args: argparse.Namespace, output_dir: str | Path) -> Optional[Path]:
+def resolve_editable_scene_dir(args: argparse.Namespace, output_dir: Union[str, Path]) -> Optional[Path]:
     """Resolve editable scenes only when the explicit opt-in mode is active."""
     if not getattr(args, "editable", False):
         return None

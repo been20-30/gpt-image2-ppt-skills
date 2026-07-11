@@ -8,6 +8,7 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE, MSO_CONNECTOR
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
 from .scene import EditableScene, SceneElement
@@ -113,7 +114,10 @@ def _add_connector(prs: Presentation, slide, scene: EditableScene, element: Scen
     connector.line.width = Pt(float(element.style.get("line_width_pt", 1)))
     connector.line.transparency = float(element.style.get("line_transparency", 0))
     if element.style.get("end_arrow"):
-        connector.line.end_arrowhead = True
+        line_properties = connector.line._get_or_add_ln()
+        tail_end = OxmlElement("a:tailEnd")
+        tail_end.set("type", "triangle")
+        line_properties.append(tail_end)
 
 
 def _render_element(prs: Presentation, slide, scene: EditableScene, element: SceneElement) -> None:

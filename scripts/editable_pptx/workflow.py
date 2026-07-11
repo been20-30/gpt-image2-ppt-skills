@@ -90,6 +90,14 @@ def build_editable_output(
     if len(declared) != len(set(declared)):
         raise ValueError(f"editable scene 的 slide_number 重复: {declared}")
 
+    for path, scene in zip(scene_files, scenes):
+        match = re.fullmatch(r"slide-(\d+)\.scene\.json", path.name)
+        expected_number = int(match.group(1)) if match else None
+        if expected_number != scene.slide_number:
+            raise ValueError(
+                f"editable scene 文件名与 slide_number 不一致: {path.name} -> {scene.slide_number}"
+            )
+
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     pptx_path = output / f"{_safe_title(title)}-editable.pptx"

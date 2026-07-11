@@ -90,6 +90,8 @@ def test_renderer_creates_ordered_multi_slide_native_deck(tmp_path):
     assert [shape.name for shape in prs.slides[1].shapes] == ["clean_plate", "banner", "title", "badge"]
     assert prs.slides[0].shapes[1].shape_type == MSO_SHAPE_TYPE.PICTURE
     assert prs.slides[0].shapes[2].shape_type == MSO_SHAPE_TYPE.LINE
+    assert "tailEnd" in prs.slides[0].shapes[2]._element.xml
+    assert 'type="triangle"' in prs.slides[0].shapes[2]._element.xml
     assert prs.slides[1].shapes[1].shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE
 
 
