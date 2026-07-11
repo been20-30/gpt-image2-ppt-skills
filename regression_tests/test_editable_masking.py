@@ -75,3 +75,13 @@ def test_letterbox_round_trip_preserves_slide_aspect_ratio():
     assert canvas_mask.getpixel((80, 50)) == 255
     assert restored.size == original.size
     assert restored.getpixel((10, 10)) == original.getpixel((10, 10))
+
+
+def test_feathered_mask_pixels_are_inside_the_allowed_edit_region():
+    original = _solid((3, 1), (10, 20, 30))
+    result = original.copy()
+    result.putpixel((1, 0), (100, 110, 120))
+    mask = Image.new("L", (3, 1), 0)
+    mask.putpixel((1, 0), 64)
+
+    assert changed_outside_mask(original, result, mask) == 0

@@ -43,7 +43,7 @@ def changed_outside_mask(
     left = original.convert("RGBA")
     right = result.convert("RGBA")
     difference = ImageChops.difference(left, right).convert("L")
-    preserve = ImageChops.invert(internal_mask.convert("L"))
+    preserve = internal_mask.convert("L").point(lambda value: 255 if value == 0 else 0)
     outside_difference = ImageChops.multiply(difference, preserve)
     return sum(1 for value in outside_difference.getdata() if value != 0)
 
