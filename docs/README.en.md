@@ -6,7 +6,7 @@
 
 Works natively in Claude Code, Codex, OpenClaw, Hermes, and any other Skill-compatible agent. Once installed in your agent, a single natural-language prompt yields 16:9 high-res images + a ready-to-send `.pptx` — or clones any reference `.pptx` template and reskins it with new content.
 
-**Possibly one of the best-looking AI PPT Skills available today.** Instead of filling text into traditional templates, it uses the visual taste, composition, and layout strengths of `gpt-image-2` to generate each slide as a complete visual composition, aiming for decks that look polished, consistent, and presentation-ready from cover to inner pages.
+Instead of filling text into traditional templates, it uses the visual taste, composition, and layout strengths of `gpt-image-2` to generate each slide as a complete visual composition, aiming for decks that look polished, consistent, and presentation-ready from cover to inner pages.
 
 The project also includes dedicated optimization for editing image-based PPTs. The normal workflow keeps each complete visual composition as a full-slide image. When native PowerPoint objects are explicitly required, an **opt-in editable mode** can reconstruct known text, basic shapes, connectors, and complex visuals as separate objects. This mode is off by default.
 
