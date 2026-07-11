@@ -10,5 +10,5 @@
   "scene_files": [
     "examples/editable-pptx/case05-summer-poster/slide-01.scene.json"
   ],
-  "pptx": "examples/editable-pptx/case05-summer-poster/夏日星星人-editable.pptx"
+  "pptx": "examples/editable-pptx/case05-summer-poster/editable.pptx"
 }

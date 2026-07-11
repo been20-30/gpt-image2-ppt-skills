@@ -59,19 +59,13 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 这个示例的 PPTX 实测包含 **13 个可选对象**：5 个原生文本、6 个原生 shape、1 个 clean plate，以及 1 个可移动、可缩放的毛绒角色与粽子冰淇淋独立图片层。文字和基础图形可以直接在 PowerPoint 中修改，复杂主视觉仍保留 gpt-image-2 的完整质感。
 
 - [下载 Case 05 可编辑 PPTX](examples/editable-pptx/case05-summer-poster/editable.pptx)
-- [查看 scene、clean plate、透明素材和质量报告](examples/editable-pptx/case05-summer-poster/)
+- [查看完整 Case 05：原图、拆层素材、边缘检查和质量报告](examples/editable-pptx/case05-summer-poster/)
 
-CLI 仅在明确要求时开启：
+这是一个 Skill，直接用自然语言告诉 AI 你的交付要求即可。例如：
 
-```bash
-python3 scripts/generate_ppt.py \
-  --plan slides_plan.json \
-  --style styles/gradient-glass.md \
-  --editable \
-  --editable-scenes editable_scenes/
-```
+> 帮我生成一份可编辑模式的 PPT。文字和基础图形要能在 PowerPoint 里直接修改，复杂主视觉要能单独移动，同时尽量保留 gpt-image-2 的完整设计感。
 
-未传 `--editable` 时，原有整页图片 PPTX 流程完全不变。
+只有明确提出“可编辑模式”“文字可以改”“元素可以拆开”或类似要求时，Skill 才会执行对象级重建。如果不特别说明，默认仍走视觉效果优先的整页图片模式。
 
 ---
 
@@ -90,7 +84,7 @@ python3 scripts/generate_ppt.py \
 
 ## 🆕 更新记录
 
-- **2026-07-11 · 可编辑模式**：新增显式 `--editable` 路径。完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
+- **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
 - **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；如果用户明确说“不需要贴原图 / 可以重绘 / 更重视整体效果”，也可以作为参考图融合重绘。医疗影像、诊断图、论文图表、财务表格、法律证据、精确 UI 截图不建议重绘，生成后需要人工核对。
 - **2026-05-26 · 扩展风格库**：从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格，覆盖商务、学术、教育、餐饮、时尚、医疗、环保等场景。
 
@@ -210,7 +204,7 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🔒 **不会误吃密钥**：脚本只读取当前进程环境、平台注入变量、显式 `GPT_IMAGE2_PPT_ENV` 和 skill 安装目录 `.env` fallback，**不会**向上递归读调用者项目目录的 `.env`。
 >
-> 🪄 模板克隆模式额外需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。先用 `python3 scripts/render_template.py --check` 检查；鸿蒙 / Termux / 容器 / 特殊架构不要假设 Linux aarch64 LibreOffice 二进制可运行。
+> 🪄 模板克隆模式额外需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。直接告诉 AI 使用你提供的 `.pptx` 模板即可，Skill 会先自动检查本机渲染能力；如果当前环境不支持，AI 会提示安装可用后端或改用模板页面图片。
 
 ### 模板克隆的 Vision 分析（可选）
 

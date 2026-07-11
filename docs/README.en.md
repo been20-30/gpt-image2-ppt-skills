@@ -56,9 +56,13 @@ Editable mode still lets `gpt-image-2` create the complete art-directed slide fi
 The PPTX contains **13 selectable objects**: 5 native text boxes, 6 native shapes, 1 clean plate, and 1 movable and resizable mascot-and-ice-cream image layer. Text and basic graphics remain directly editable in PowerPoint, while the complex hero artwork preserves the full `gpt-image-2` visual quality.
 
 - [Download the editable Case 05 PPTX](../examples/editable-pptx/case05-summer-poster/editable.pptx)
-- [Inspect its scene, clean plate, transparent layer, and quality report](../examples/editable-pptx/case05-summer-poster/)
+- [View the complete Case 05 study: source visual, separated layer, edge checks, and quality report](../examples/editable-pptx/case05-summer-poster/)
 
-Enable it explicitly with `--editable --editable-scenes <dir>`. Without `--editable`, the existing image-based workflow is unchanged.
+This is a Skill, so describe the delivery requirement directly in natural language. For example:
+
+> Create this deck in editable mode. Keep text and basic graphics directly editable in PowerPoint, make the complex hero visual independently movable, and preserve as much of the complete `gpt-image-2` art direction as possible.
+
+Object-level reconstruction is used only when the user explicitly asks for editable text, separable elements, movable artwork, or similar requirements. Otherwise, the default image-first workflow continues to prioritize the strongest visual result.
 
 ---
 
@@ -187,7 +191,7 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🔒 **Won't accidentally eat your secrets**: the script only reads the current process env, platform-injected variables, an explicit `GPT_IMAGE2_PPT_ENV`, and the skill install directory `.env` fallback. It does **not** walk up into caller project directories.
 >
-> 🪄 Template-clone mode additionally needs an executable PPTX renderer: Windows PowerPoint, macOS Keynote, or LibreOffice. Run `python3 scripts/render_template.py --check` first; HarmonyOS / Termux / containers / unusual architectures should not assume Linux aarch64 LibreOffice binaries are runnable.
+> 🪄 Template-clone mode additionally needs an executable PPTX renderer such as Windows PowerPoint, macOS Keynote, or LibreOffice. Simply ask the AI to use your `.pptx` template; the Skill checks local rendering support first and, when unavailable, explains how to install a compatible renderer or use exported template-page images instead.
 
 ### Vision analysis for template clone (optional)
 
