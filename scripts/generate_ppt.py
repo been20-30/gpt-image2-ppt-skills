@@ -2918,6 +2918,20 @@ def generate_pptx(
     return pptx_path
 
 
+def resolve_editable_scene_dir(args: argparse.Namespace, output_dir: str | Path) -> Optional[Path]:
+    """Resolve editable scenes only when the explicit opt-in mode is active."""
+    if not getattr(args, "editable", False):
+        return None
+    explicit = getattr(args, "editable_scenes", None)
+    candidate = Path(explicit) if explicit else Path(output_dir) / "editable_scenes"
+    if not candidate.is_dir():
+        raise ValueError(
+            "可编辑模式缺少 scene 目录。请传 --editable-scenes DIR，"
+            f"或创建 {Path(output_dir) / 'editable_scenes'}"
+        )
+    return candidate
+
+
 # =============================================================================
 # Commands (edit, rollback, ingest, list-sessions)
 # =============================================================================
@@ -3310,6 +3324,7 @@ Example usage:
   # Generate
   python scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-glass.md
   python scripts/generate_ppt.py --plan slides_plan.json --style styles/clean-tech-blue.md --slides 1,3,5
+  python scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-glass.md --editable --editable-scenes editable_scenes/
 
   # Edit
   python scripts/generate_ppt.py --edit 3 --session 20240523_143052 --element-updates '{"subtitle":{"content":"新内容"}}'
@@ -3370,6 +3385,15 @@ Environment variables:
         "--no-pptx",
         action="store_true",
         help="不生成 .pptx 文件（默认会自动打包成 16:9 PPTX）",
+    )
+    parser.add_argument(
+        "--editable",
+        action="store_true",
+        help="生成可编辑对象版 PPTX；默认关闭，普通整页图片 PPTX 仍会保留",
+    )
+    parser.add_argument(
+        "--editable-scenes",
+        help="slide-XX.scene.json 所在目录；仅与 --editable 一起使用",
     )
     parser.add_argument(
         "--backend",
@@ -3448,6 +3472,11 @@ def main() -> None:
 
     parser = create_argument_parser()
     args = parser.parse_args()
+
+    if args.editable_scenes and not args.editable:
+        parser.error("--editable-scenes 只能与 --editable 一起使用")
+    if args.editable and args.no_pptx:
+        parser.error("--editable 与 --no-pptx 不能同时使用")
 
     # ── 命令分发 ────────────────────────────────────────────
     if args.list_sessions:
@@ -3915,6 +3944,25 @@ def main() -> None:
             print(f"    Trace: {os.path.join(output_dir, 'external_image_trace')}")
             sys.exit(1)
 
+    editable_pptx_path = None
+    if args.editable and not args.no_pptx:
+        try:
+            scene_dir = resolve_editable_scene_dir(args, output_dir)
+            from editable_pptx.workflow import build_editable_output
+
+            editable_result = build_editable_output(
+                scene_dir,
+                _collect_slide_numbers(metadata),
+                output_dir,
+                slides_plan.get("title", "Untitled"),
+            )
+            editable_pptx_path = str(editable_result.pptx_path)
+        except (ValueError, OSError, json.JSONDecodeError) as exc:
+            print()
+            print(f"[X] 可编辑 PPTX 构建失败：{exc}")
+            print(f"    普通 PPTX 与已有 scene 证据已保留在：{output_dir}")
+            sys.exit(1)
+
     print()
     print("=" * 60)
     print("Generation Complete!")
@@ -3923,6 +3971,8 @@ def main() -> None:
     print(f"Metadata:    {os.path.join(output_dir, 'metadata.json')}")
     if pptx_path:
         print(f"PPTX file:   {pptx_path}")
+    if editable_pptx_path:
+        print(f"Editable:    {editable_pptx_path}")
     print()
 
 
