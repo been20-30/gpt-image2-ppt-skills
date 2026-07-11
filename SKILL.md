@@ -379,6 +379,85 @@ GPT_IMAGE_BACKEND=codex              # 不想每次敲 --backend 就设这个
    - `metadata.json` -- slide_spec 版本历史（支持精确编辑和回滚）
    - `<title>.pptx` -- 16:9 PPTX；默认背景与文字是整页图片，通过 `external_image` 放入的真实图片会作为独立 PPT 图片对象叠加
 
+## 可编辑模式（默认关闭）
+
+普通模式仍优先保证 gpt-image-2 的整页审美，输出背景和文字为整页图片。只有用户明确要求“可编辑 PPTX / 文字可以改 / 元素可拆 / 图片可移动 / 原生形状”时，才启用可编辑模式；不要根据内容类型自行默认开启。
+
+### 核心原则
+
+**不要禁止 gpt-image-2 在初始视觉稿中生成标题、正文、数字、表格、Logo 或关键图表。** 模型仍先生成完整成品页，以保留整体构图、材质、光效和文字与视觉之间的关系；可编辑模式是生成后的重建步骤。
+
+用户明确要求可编辑时，agent 必须：
+
+1. 正常完成 `slides_plan.md` → `slides_plan.json` 和单页视觉冒烟；
+2. 保存每页完整视觉稿为 `visual-master`；
+3. 为每页建立 `slide-XX.scene.json`、clean plate、独立素材和质检证据；
+4. 调用显式的 `--editable` 模式；
+5. 回渲染并人工检查，不能只看自动报告。
+
+```bash
+python3 scripts/generate_ppt.py \
+  --plan slides_plan.json \
+  --style styles/dark-aurora.md \
+  --editable \
+  --editable-scenes editable_scenes/
+```
+
+- `--editable` 默认关闭；未传时，现有生成、编辑、回滚和普通 PPTX 打包行为不变。
+- `--editable-scenes` 指向包含 `slide-01.scene.json`、`slide-02.scene.json` 等文件的目录。
+- 省略 `--editable-scenes` 时，会尝试 `<session>/editable_scenes/`。
+- scene 缺页、素材丢失或格式错误时，**不得静默**退化成整页图片并声称可编辑；应保留普通 PPTX 和中间证据，然后明确失败。
+- 成功时同时保留 `<title>.pptx` 和 `<title>-editable.pptx`。
+
+### Scene 元素
+
+每个 scene 使用真实像素画布坐标，至少声明 `slide_number`、`canvas`、`clean_plate` 和按 `z_index` 排序的 `elements`。支持：
+
+| type | 用途 |
+| --- | --- |
+| `native_text` | 标题、正文、日期、数字、标签、徽章文字；输出 PowerPoint 原生文本框 |
+| `image_layer` | 照片、主视觉、插画、复杂纹理和无法合理转成 shape 的对象；输出独立图片层 |
+| `native_shape` | 矩形、圆角矩形、圆、五角星和线条；输出原生 PowerPoint shape |
+| `connector` | 架构图、流程图的直线连接线和箭头 |
+
+scene 中的路径优先写相对于 scene JSON 的相对路径，便于示例和 session 整体移动。完整示例见 `examples/editable-pptx/case05-summer-poster/slide-01.scene.json`。
+
+### 重叠素材的 A1 → A2 → B 路由
+
+1. **A1 原像素直接提取（默认）**：轮廓完整、遮挡少、边缘干净时直接从完整视觉稿提取。多个彼此重叠的素材默认作为一个连接组合层提取，不强行拆成残缺对象。
+2. **A2 原像素 + 遮挡补全**：保留可见原像素，对对象背面或对象移走后暴露的 clean plate 做补全。
+3. **B AI 分离或重生成**：仅当 A1/A2 的毛发、毛绒、半透明、玻璃、白色主体、复杂水彩边缘或遮挡补全效果不合格，或用户明确要求设计模式时启用。
+
+不要因为 B 更方便就跳过 A1。每次升级必须在 `quality-report.json` 记录原因。Case 05 的毛绒角色、白色冰淇淋与水彩云混合，A1/A2 边缘不稳定，因此使用 B 生成单色键背景的组合素材，再本地去背景。
+
+### Clean plate 与页面类型
+
+- 保存 `visual-master.png`，不要覆盖原始成品页。
+- 文字和独立图片对象必须从 `clean-plate.png` 中移除；移动对象后不能露出第二份相同对象。
+- API edit 只能在显式 repair mask 内合成，mask 外像素必须锁定。
+- 简单渐变、霓虹光带、纯色卡片可使用确定性插值；出现幽灵字、色块、暗圆或明显补丁时必须拒绝。
+- 数据页把标题、标签和数字分别建立 `native_text`，不要把整张数据卡当成不可编辑截图。
+- 架构图、流程图和规则信息图优先重建为 `native_shape` + `native_text` + `connector`，不要仅在截图上覆盖文字。
+
+### 交付门槛
+
+每页至少保留：
+
+```text
+editable/slide-XX/
+├── visual-master.png
+├── clean-plate.png
+├── repair-mask.png          # 使用局部修复时
+├── layers/*.png
+├── edge-check-white.png     # 有透明图片层时
+├── edge-check-black.png
+└── quality-report.json
+```
+
+交付前必须检查：scene schema、PPTX 对象名称与数量、mask 外像素变化、黑/白底边缘、文字修改、图片移动、Office/Keynote/LibreOffice 回渲染以及人工视觉效果。自动 `status=pass` 不能代替目测。
+
+向用户报告普通 PPTX、`-editable.pptx`、输出目录和回渲染路径，并说明哪些视觉仍作为独立图片层存在。
+
 ## 外部真实图片贴入（推荐精确流程）
 
 默认规则：用户提供真实图时，优先按原图保真后贴，不要让 `gpt-image-2` 重画这张图。使用 `slide_spec` 声明外部图片槽位：

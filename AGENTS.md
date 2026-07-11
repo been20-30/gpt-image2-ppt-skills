@@ -11,6 +11,7 @@
 - **模板克隆**：`--template-pptx path/to/xxx.pptx --template-strict`，vision 分析 + 缓存细节在 `SKILL.md` 的"模板克隆模式"一节；**如果你自己就是多模态 agent**(多模态 Claude / GPT / 原生 Codex 等)，可以直接 `Read` `template_renders/<stem>/page-*.png` 自己抽风格写 `template_profile.json`，用 `--template-profile` 传入，不用外挂 `VISION_*`
 - **冒烟策略**：API 直连 / 非 Codex 原生路径先 `--slides 1` 出封面；如果你自己就是带原生出图能力的 Codex，则直接用当前会话的 image_generation tool 生成第 1 页 PNG 做冒烟，不要经 `--backend codex`
 - **产物**：`<cwd>/outputs/<timestamp>/{images/, prompts.json, metadata.json, <title>.pptx}`
+- **可编辑模式（默认关闭）**：用户明确要求文字/元素可编辑时，必须先读 `SKILL.md` 的“可编辑模式（默认关闭）”章节，再用 `--editable --editable-scenes <dir>`；不要静默退化成整页图片
 
 ## 调用规范（对 agent 的硬约束）
 

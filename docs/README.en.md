@@ -8,7 +8,7 @@ Works natively in Claude Code, Codex, OpenClaw, Hermes, and any other Skill-comp
 
 **Possibly one of the best-looking AI PPT Skills available today.** Instead of filling text into traditional templates, it uses the visual taste, composition, and layout strengths of `gpt-image-2` to generate each slide as a complete visual composition, aiming for decks that look polished, consistent, and presentation-ready from cover to inner pages.
 
-The project also includes dedicated optimization for editing image-based PPTs. You can describe the target slide and element in natural language, and the system regenerates that slide through image-to-image editing while trying to preserve the original style and layout. One important caveat: the background and text in these PPTs are full-slide images. If your workflow depends on manually editing native PowerPoint text boxes and individual objects, this may not be the right fit.
+The project also includes dedicated optimization for editing image-based PPTs. The normal workflow keeps each complete visual composition as a full-slide image. When native PowerPoint objects are explicitly required, an **opt-in editable mode** can reconstruct known text, basic shapes, connectors, and complex visuals as separate objects. This mode is off by default.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
@@ -41,6 +41,25 @@ The project also includes dedicated optimization for editing image-based PPTs. Y
 
 ---
 
+## 🧩 Opt-in editable mode example
+
+Editable mode still lets `gpt-image-2` create the complete art-directed slide first. A post-generation scene then reconstructs text and basic graphics as native PowerPoint objects while keeping complex artwork as independent image layers.
+
+<table>
+<tr><th width="50%">Original complete visual</th><th width="50%">Office render of editable PPTX</th></tr>
+<tr>
+<td><img src="../examples/editable-pptx/case05-summer-poster/original.png" width="100%" alt="editable example original"></td>
+<td><img src="../examples/editable-pptx/case05-summer-poster/rendered.png" width="100%" alt="editable example rendered"></td>
+</tr>
+</table>
+
+- [Download the editable Case 05 PPTX](../examples/editable-pptx/case05-summer-poster/editable.pptx)
+- [Inspect its scene, clean plate, transparent layer, and quality report](../examples/editable-pptx/case05-summer-poster/)
+
+Enable it explicitly with `--editable --editable-scenes <dir>`. Without `--editable`, the existing image-based workflow is unchanged.
+
+---
+
 ## ✨ What it does
 
 - 🎨 **10 curated styles + an expanded style library** — built-ins include Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Risograph / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration; on 2026-05-26, 22 additional high-quality styles were selected from 500+ publicly available PPT templates
@@ -51,6 +70,7 @@ The project also includes dedicated optimization for editing image-based PPTs. Y
 - ⚡ **10-way concurrency by default** — a 10-page deck finishes in ~30s
 - 🧪 **Preview one slide first** — approve the cover before generating the full deck
 - 🧾 **Trackable edits** — changed slides and generated versions can be traced and rolled back
+- 🧩 **Opt-in editable output** — explicitly requested decks can use native text, shapes, connectors, and independent picture layers
 
 ## ✅ Best-fit use cases
 
@@ -106,7 +126,7 @@ Summary:
 | Multiple explicit edits | Works best when the user clearly says what should stay unchanged. |
 | Metric slides | Works, but numbers must be checked. |
 | Small icon / logo insertion | Works for style-matched icons; real brand logos need source assets. |
-| Native PowerPoint object editing | Not supported; output PPTX uses full-slide images. |
+| Native PowerPoint object editing | Default output uses full-slide images; opt-in editable mode emits native text, shapes, connectors, and independent picture layers. |
 
 <details>
 <summary>Developer note: internal editing mechanism diagram</summary>

@@ -8,7 +8,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 **可能是目前全网效果最好的 AI PPT Skill 之一。** 它不走传统“模板填字”的路线，而是充分发挥 `gpt-image-2` 的审美、构图和排版能力，把每一页都当成完整视觉稿生成，力求让输出从封面到内页都足够精美、统一、可直接展示。
 
-同时，项目对图片型 PPT 的后续编辑做了专门优化：你可以用自然语言精准描述要改的页和元素，系统会以“图生图”的方式重生成目标页，并尽量保留原有风格和布局。需要说明的是，这类 PPT 的背景和文字本质上是整页图片；如果你的工作流强依赖人工逐字、逐对象编辑原生 PPT 元素，它可能不是最合适的选择。
+同时，项目对图片型 PPT 的后续编辑做了专门优化：默认模式仍以整页视觉稿保证 gpt-image-2 的构图与审美；如果用户明确要求文字、图形和素材可单独编辑，可以启用**默认关闭的可编辑模式**，把完整视觉稿重建为 PowerPoint 原生文本、基础图形、连接线和独立图片层。
 
 [![GitHub stars](https://img.shields.io/github/stars/JuneYaooo/gpt-image2-ppt-skills?style=flat)](https://github.com/JuneYaooo/gpt-image2-ppt-skills/stargazers)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
@@ -41,6 +41,40 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 ---
 
+## 🧩 可编辑模式示例（默认关闭）
+
+可编辑模式不会限制 gpt-image-2 的初始设计：模型仍先生成包含完整文字与主视觉的成品页，再把已知文字、基础图形和复杂素材重建成 PowerPoint 对象。
+
+<table>
+<tr>
+<th width="50%">原始完整视觉稿</th>
+<th width="50%">可编辑 PPTX 的 Office 回渲染</th>
+</tr>
+<tr>
+<td><img src="examples/editable-pptx/case05-summer-poster/original.png" width="100%" alt="editable mode original poster"></td>
+<td><img src="examples/editable-pptx/case05-summer-poster/rendered.png" width="100%" alt="editable PPTX rendered result"></td>
+</tr>
+</table>
+
+这个示例包含原生标题、标签、徽章、横幅和装饰形状；毛绒角色与粽子冰淇淋是一个可移动的独立图片层。
+
+- [下载 Case 05 可编辑 PPTX](examples/editable-pptx/case05-summer-poster/editable.pptx)
+- [查看 scene、clean plate、透明素材和质量报告](examples/editable-pptx/case05-summer-poster/)
+
+CLI 仅在明确要求时开启：
+
+```bash
+python3 scripts/generate_ppt.py \
+  --plan slides_plan.json \
+  --style styles/gradient-glass.md \
+  --editable \
+  --editable-scenes editable_scenes/
+```
+
+未传 `--editable` 时，原有整页图片 PPTX 流程完全不变。
+
+---
+
 ## ✨ 能做什么
 
 - 🎨 **十套精选风格 + 扩展风格库** — 内置 Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Riso / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration，并持续补充优质风格
@@ -52,9 +86,11 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 - 🧪 **先看一页再跑全量** — 默认建议先出封面给你确认，满意后再生成整套
 - 🧾 **可追踪、可回滚** — 修改过哪些页、生成过哪些版本都能追踪，方便继续改
 - 🖼️ **真实素材双模式** — 用户给的真实图默认保真嵌入；用户明确允许时，也可以作为参考图融合重绘
+- 🧩 **可编辑模式（默认关闭）** — 用户明确要求时，把文字、基础图形、连接线和复杂主视觉拆成可单独编辑的 PowerPoint 对象
 
 ## 🆕 更新记录
 
+- **2026-07-11 · 可编辑模式**：新增显式 `--editable` 路径。完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
 - **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；如果用户明确说“不需要贴原图 / 可以重绘 / 更重视整体效果”，也可以作为参考图融合重绘。医疗影像、诊断图、论文图表、财务表格、法律证据、精确 UI 截图不建议重绘，生成后需要人工核对。
 - **2026-05-26 · 扩展风格库**：从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格，覆盖商务、学术、教育、餐饮、时尚、医疗、环保等场景。
 
@@ -116,7 +152,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 | 改多个明确元素 | 可用，建议一次说清楚“其他不要动”。 |
 | 改数据页 | 可用，但必须核对数字。 |
 | 加小图标 / logo | 可用；真实品牌 logo 需要提供素材。 |
-| 原生 PPT 对象级编辑 | 背景与文字仍是整页图片；通过 `external_image` 声明的真实图片会作为独立 PPT 图片对象叠加，可单独选中拖动。 |
+| 原生 PPT 对象级编辑 | 默认模式仍是整页图片；明确启用可编辑模式后，可输出原生文本、shape、connector 和独立图片层。 |
 
 <details>
 <summary>开发者：查看内部编辑机制示意图</summary>
