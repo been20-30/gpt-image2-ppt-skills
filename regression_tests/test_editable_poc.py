@@ -78,3 +78,19 @@ def test_offline_poc_fails_report_when_candidate_size_differs(tmp_path):
         assert "尺寸" in str(exc)
     else:
         raise AssertionError("mismatched edit candidate should fail")
+
+
+def test_offline_poc_accepts_a_pixel_level_repair_mask(tmp_path):
+    scene, edited_candidate = _make_synthetic_poc(tmp_path)
+    mask = Image.new("L", (160, 90), 0)
+    mask.putpixel((25, 25), 128)
+    mask_path = tmp_path / "glyph-mask.png"
+    mask.save(mask_path)
+    scene.pop("repair_regions")
+    scene["repair_mask"] = str(mask_path)
+
+    result = run_poc(scene, edited_candidate, tmp_path / "out")
+
+    saved_mask = Image.open(result.internal_mask_path).convert("L")
+    assert saved_mask.getpixel((25, 25)) == 128
+    assert saved_mask.getbbox() == (25, 25, 26, 26)

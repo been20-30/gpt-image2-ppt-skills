@@ -35,7 +35,7 @@ def _load_scene(source: dict[str, Any] | Path | str) -> tuple[dict[str, Any], Pa
 
 
 def _resolve_scene_paths(scene: dict[str, Any], base_dir: Path) -> None:
-    for key in ("visual_master", "clean_plate"):
+    for key in ("visual_master", "clean_plate", "repair_mask"):
         value = scene.get(key)
         if value and not Path(str(value)).is_absolute():
             scene[key] = str((base_dir / str(value)).resolve())
@@ -49,6 +49,13 @@ def _repair_mask(scene: dict[str, Any]) -> Image.Image:
     canvas = scene.get("canvas") or {}
     width = int(canvas.get("width") or 0)
     height = int(canvas.get("height") or 0)
+    repair_mask = scene.get("repair_mask")
+    if repair_mask:
+        mask = Image.open(str(repair_mask)).convert("L")
+        if mask.size != (width, height):
+            raise ValueError(f"repair_mask 尺寸必须等于 canvas: {mask.size} != {(width, height)}")
+        return mask
+
     mask = Image.new("L", (width, height), 0)
     draw = ImageDraw.Draw(mask)
     for region in scene.get("repair_regions") or []:
