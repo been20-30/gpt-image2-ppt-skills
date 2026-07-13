@@ -67,11 +67,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 只有明确提出“可编辑模式”“文字可以改”“元素可以拆开”或类似要求时，Skill 才会执行对象级重建。如果不特别说明，默认仍走视觉效果优先的整页图片模式。
 
-> ⚠️ **可编辑模式需要本机具备 PPTX 回渲染能力。** 与模板克隆模式相同，运行前必须有可执行的 Windows PowerPoint、macOS Keynote 或 LibreOffice。Skill 会先执行真实可用性检查，生成后自动把 `-editable.pptx` 回渲染到 `editable_renders/page-XX.png`，再由多模态 AI 逐页看图验收。没有可用渲染后端时，不会把未经回渲染检查的可编辑文件标记为成功。
->
-> ```bash
-> python3 scripts/render_template.py --check
-> ```
+> ⚠️ **可编辑模式需要本机具备 PPTX 回渲染能力。** 与模板克隆模式相同，运行前必须有可执行的 Windows PowerPoint、macOS Keynote 或 LibreOffice。用户无需执行检查命令，只要像上面那样用自然语言说明需要可编辑交付；Skill 会自动检查环境，生成后把 `-editable.pptx` 回渲染到 `editable_renders/page-XX.png`，再由多模态 AI 逐页看图验收。没有可用渲染后端时，不会把未经回渲染检查的可编辑文件标记为成功。
 
 可编辑重建采用**效果优先、生成轮次受控**的策略：允许多轮本地预检和回渲染；优先用字体、坐标、裁切等确定性修复，其次进行原像素提取与遮挡补全，只对失败的复杂图层进行 AI 重绘，只有整体构图失败时才重新生成整页。这样不会为了追求单轮而牺牲效果，也不会因为局部问题反复重做整页。
 

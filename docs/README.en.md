@@ -64,11 +64,7 @@ When you need an editable deliverable, you can ask:
 
 Object-level reconstruction is used only when the user explicitly asks for editable text, separable elements, movable artwork, or similar requirements. Otherwise, the default image-first workflow continues to prioritize the strongest visual result.
 
-> ⚠️ **Editable mode requires a working local PPTX renderer.** Just like template-clone mode, it needs executable Windows PowerPoint, macOS Keynote, or LibreOffice. The Skill probes the renderer before generation, then automatically renders the finished `-editable.pptx` to `editable_renders/page-XX.png` for page-by-page visual review by a multimodal agent. Without a usable renderer, an unreviewed editable file is not reported as a successful deliverable.
->
-> ```bash
-> python3 scripts/render_template.py --check
-> ```
+> ⚠️ **Editable mode requires a working local PPTX renderer.** Just like template-clone mode, it needs executable Windows PowerPoint, macOS Keynote, or LibreOffice. Users do not need to run a check command; they only need to describe the editable deliverable in natural language as shown above. The Skill checks the environment automatically, then renders the finished `-editable.pptx` to `editable_renders/page-XX.png` for page-by-page visual review by a multimodal agent. Without a usable renderer, an unreviewed editable file is not reported as a successful deliverable.
 
 Editable reconstruction is **quality-first with controlled generation rounds**. Low-cost preflight checks and render reviews may run repeatedly. The workflow first uses deterministic fixes such as font, coordinate, crop, and layering changes; then original-pixel extraction and occlusion completion; then AI regeneration only for failed complex layers. A full-slide regeneration is reserved for structural composition failures.
 
