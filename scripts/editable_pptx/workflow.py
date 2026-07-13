@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from render_template import check_render_backend, render_pptx_to_pngs
+
 from .renderer import render_editable_deck
 from .scene import EditableScene
 
@@ -17,7 +19,43 @@ from .scene import EditableScene
 class EditableBuildResult:
     pptx_path: Path
     report_path: Path
+    render_dir: Path
     scene_files: tuple[Path, ...]
+
+
+def require_editable_render_backend() -> tuple[str, ...]:
+    """Fail early unless editable PPTX output can be rendered back to images."""
+    ok, messages = check_render_backend()
+    if ok:
+        return tuple(messages)
+    details = "\n".join(f"  {message}" for message in messages)
+    raise RuntimeError(
+        "可编辑模式需要可执行的 PPTX 回渲染后端，才能把生成结果转成图片并由多模态 agent 人工验收。\n"
+        "支持 Windows PowerPoint、macOS Keynote 或 LibreOffice。\n"
+        f"探测结果：\n{details}\n"
+        "可安装 LibreOffice 后重试：\n"
+        "  Windows: winget install LibreOffice.LibreOffice\n"
+        "  macOS:   brew install --cask libreoffice（或安装 Keynote）\n"
+        "  Linux:   sudo apt-get install -y libreoffice"
+    )
+
+
+def render_editable_preview(
+    pptx_path: Path | str,
+    output_dir: Path | str,
+    expected_slide_count: int,
+) -> Path:
+    """Render editable output and verify that every slide produced a PNG."""
+    require_editable_render_backend()
+    render_dir = Path(output_dir) / "editable_renders"
+    rendered = render_pptx_to_pngs(pptx_path, out_dir=render_dir, force=True)
+    pages = sorted(rendered.glob("page-*.png"))
+    if len(pages) != expected_slide_count:
+        raise RuntimeError(
+            "可编辑 PPTX 回渲染页数不匹配："
+            f"预期 {expected_slide_count} 页，实际 {len(pages)} 页（{rendered}）"
+        )
+    return rendered
 
 
 def discover_scene_files(scene_dir: Path | str, slide_numbers: Iterable[int]) -> tuple[Path, ...]:
@@ -102,9 +140,10 @@ def build_editable_output(
     output.mkdir(parents=True, exist_ok=True)
     pptx_path = output / f"{_safe_title(title)}-editable.pptx"
     render_editable_deck(scenes, pptx_path)
+    render_dir = render_editable_preview(pptx_path, output, len(scenes))
 
     report = {
-        "status": "pass",
+        "status": "rendered_pending_manual_review",
         "mode": "editable",
         "slide_count": len(scenes),
         **inventory_scenes(scenes),
@@ -113,7 +152,15 @@ def build_editable_output(
         ),
         "scene_files": [str(path) for path in scene_files],
         "pptx": str(pptx_path),
+        "render_dir": str(render_dir),
+        "rendered_pages": [str(path) for path in sorted(render_dir.glob("page-*.png"))],
+        "manual_visual_review_required": True,
     }
     report_path = output / "editable-quality-report.json"
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    return EditableBuildResult(pptx_path=pptx_path, report_path=report_path, scene_files=scene_files)
+    return EditableBuildResult(
+        pptx_path=pptx_path,
+        report_path=report_path,
+        render_dir=render_dir,
+        scene_files=scene_files,
+    )

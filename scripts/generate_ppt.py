@@ -3389,7 +3389,7 @@ Environment variables:
     parser.add_argument(
         "--editable",
         action="store_true",
-        help="生成可编辑对象版 PPTX；默认关闭，普通整页图片 PPTX 仍会保留",
+        help="生成可编辑对象版 PPTX；需要 PowerPoint/Keynote/LibreOffice 回渲染，默认关闭",
     )
     parser.add_argument(
         "--editable-scenes",
@@ -3500,6 +3500,13 @@ def main() -> None:
             parser.error("--rollback requires --to-version")
         cmd_rollback_slide(args)
         return
+
+    if args.editable:
+        from editable_pptx.workflow import require_editable_render_backend
+        try:
+            require_editable_render_backend()
+        except RuntimeError as exc:
+            parser.error(str(exc))
 
     # ── 生成模式：必须提供 --plan ───────────────────────────
     if not args.plan:
@@ -3945,6 +3952,7 @@ def main() -> None:
             sys.exit(1)
 
     editable_pptx_path = None
+    editable_render_dir = None
     if args.editable and not args.no_pptx:
         try:
             scene_dir = resolve_editable_scene_dir(args, output_dir)
@@ -3957,7 +3965,8 @@ def main() -> None:
                 slides_plan.get("title", "Untitled"),
             )
             editable_pptx_path = str(editable_result.pptx_path)
-        except (ValueError, OSError, json.JSONDecodeError) as exc:
+            editable_render_dir = str(editable_result.render_dir)
+        except (ValueError, OSError, RuntimeError, json.JSONDecodeError) as exc:
             print()
             print(f"[X] 可编辑 PPTX 构建失败：{exc}")
             print(f"    普通 PPTX 与已有 scene 证据已保留在：{output_dir}")
@@ -3973,6 +3982,8 @@ def main() -> None:
         print(f"PPTX file:   {pptx_path}")
     if editable_pptx_path:
         print(f"Editable:    {editable_pptx_path}")
+    if editable_render_dir:
+        print(f"Editable render: {editable_render_dir}")
     print()
 
 

@@ -67,6 +67,14 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 
 只有明确提出“可编辑模式”“文字可以改”“元素可以拆开”或类似要求时，Skill 才会执行对象级重建。如果不特别说明，默认仍走视觉效果优先的整页图片模式。
 
+> ⚠️ **可编辑模式需要本机具备 PPTX 回渲染能力。** 与模板克隆模式相同，运行前必须有可执行的 Windows PowerPoint、macOS Keynote 或 LibreOffice。Skill 会先执行真实可用性检查，生成后自动把 `-editable.pptx` 回渲染到 `editable_renders/page-XX.png`，再由多模态 AI 逐页看图验收。没有可用渲染后端时，不会把未经回渲染检查的可编辑文件标记为成功。
+>
+> ```bash
+> python3 scripts/render_template.py --check
+> ```
+
+可编辑重建采用**效果优先、生成轮次受控**的策略：允许多轮本地预检和回渲染；优先用字体、坐标、裁切等确定性修复，其次进行原像素提取与遮挡补全，只对失败的复杂图层进行 AI 重绘，只有整体构图失败时才重新生成整页。这样不会为了追求单轮而牺牲效果，也不会因为局部问题反复重做整页。
+
 ---
 
 ## 🚀 快速开始
@@ -213,7 +221,7 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🔒 **不会误吃密钥**：脚本只读取当前进程环境、平台注入变量、显式 `GPT_IMAGE2_PPT_ENV` 和 skill 安装目录 `.env` fallback，**不会**向上递归读调用者项目目录的 `.env`。
 >
-> 🪄 模板克隆模式额外需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。直接告诉 AI 使用你提供的 `.pptx` 模板即可，Skill 会先自动检查本机渲染能力；如果当前环境不支持，AI 会提示安装可用后端或改用模板页面图片。
+> 🪄 模板克隆模式和可编辑模式都需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。模板克隆需要先把模板转成图片供 AI 看版式；可编辑模式需要把交付文件重新转成图片供 AI 验收。Skill 会先自动检查本机渲染能力；如果当前环境不支持，AI 会提示安装可用后端。模板克隆还可以改用手动导出的模板页面图片。
 
 </details>
 
@@ -248,6 +256,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🆕 更新记录
 
+- **2026-07-13 · 可编辑回渲染与轮次策略**：`--editable` 现在像模板克隆一样强制检查 PowerPoint / Keynote / LibreOffice，完成后自动输出 `editable_renders/page-XX.png` 供多模态验收；工作流改为效果优先、低成本检查可多轮、生成修复逐级升级并优先局部处理。
 - **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
 - **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；用户明确允许时，也可以作为参考图融合重绘。
 - **2026-05-26 · 扩展风格库**：从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格，覆盖商务、学术、教育、餐饮、时尚、医疗、环保等场景。

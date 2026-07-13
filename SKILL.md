@@ -387,13 +387,54 @@ GPT_IMAGE_BACKEND=codex              # 不想每次敲 --backend 就设这个
 
 **不要禁止 gpt-image-2 在初始视觉稿中生成标题、正文、数字、表格、Logo 或关键图表。** 模型仍先生成完整成品页，以保留整体构图、材质、光效和文字与视觉之间的关系；可编辑模式是生成后的重建步骤。
 
+### 效果优先与轮次控制
+
+可编辑模式以最终视觉效果和对象级可编辑质量为首要目标，不强制单轮完成；但必须区分低成本检查轮次与高成本生成轮次：
+
+- **检查轮次可以多轮**：scene schema、字体可用性、文字溢出、对象越界、图片比例、黑白底边缘、对象移动、PPTX 回渲染和人工看图都可以重复执行，不因追求少轮而跳过。
+- **生成轮次逐级升级**：优先调整字体、坐标、裁切、圆角、层级等确定性参数；其次走 A1 原像素提取和 A2 遮挡补全；再只对失败的复杂素材做 B AI 分离/重生成；只有整体构图、视觉层级或风格明显不合格时，才允许重生整页。
+- **局部问题只修局部**：一个图层、一个文本框或一个槽位失败时，不得默认重新生成已经通过检查的其它内容。
+- **每轮保留当前最佳版本**：在 `quality-report.json` 记录本轮问题、修复范围、所用路由和结果；新版本没有带来可见提升时停止，不要为了“多试一次”让版式随机漂移。
+- **真实素材仍以保真为先**：Logo、产品 UI、医学影像、论文图表、财务数据和证据截图不得为了减少轮次而改走 AI 重绘。
+
+推荐顺序：
+
+```text
+完整视觉稿 / 用户参考图
+  -> 一次性 scene 规划与对象分层
+  -> 原生对象重建 + A1/A2 素材处理
+  -> 多轮低成本预检与回渲染
+  -> 仅对失败范围做局部修复或 B 路由
+  -> 只有结构性失败才重生整页
+  -> 选择历史最佳版本交付
+```
+
+### 可编辑模式的回渲染前置检查（必须）
+
+可编辑 PPTX 必须能被重新渲染成图片，供多模态 agent 逐页读取并人工验收；要求与模板克隆模式相同。**在跑任何 `--editable` 命令之前，必须先检查本机是否有可执行的 PPTX 渲染后端：**
+
+```bash
+python3 scripts/render_template.py --check
+```
+
+- Windows：PowerPoint COM > LibreOffice
+- macOS：Keynote AppleScript > LibreOffice
+- Linux / 兼容层：实际可执行的 LibreOffice / `soffice`
+
+不能只检查文件路径或安装包是否存在，必须以 `--check`、PowerPoint COM 启动、Keynote AppleScript 探测或 `libreoffice --version` 的实际结果为准。鸿蒙、Termux、容器和特殊架构同样不得假设 LibreOffice 可运行。
+
+如果没有可用后端，停止可编辑模式并告知用户安装 PowerPoint、Keynote 或 LibreOffice；不得生成一个未经回渲染检查的 `-editable.pptx` 并声称成功。安装方式与上方“模板克隆模式”的渲染后端说明相同。
+
+`generate_ppt.py --editable` 会在开始生成前执行同等预检；构建完成后自动把 `-editable.pptx` 回渲染到 `<session>/editable_renders/page-XX.png`。agent 必须逐页读取这些 PNG，检查字体替换、换行、对象错位、边缘和视觉差异。纯文本 agent 无法完成这一步时，必须明确要求用户或另一个多模态 agent 看图验收，不能把自动报告当作人工验收。
+
 用户明确要求可编辑时，agent 必须：
 
-1. 正常完成 `slides_plan.md` → `slides_plan.json` 和单页视觉冒烟；
-2. 保存每页完整视觉稿为 `visual-master`；
-3. 为每页建立 `slide-XX.scene.json`、clean plate、独立素材和质检证据；
-4. 调用显式的 `--editable` 模式；
-5. 回渲染并人工检查，不能只看自动报告。
+1. 先运行 `python3 scripts/render_template.py --check`，确认回渲染后端真实可用；
+2. 正常完成 `slides_plan.md` → `slides_plan.json` 和单页视觉冒烟；
+3. 保存每页完整视觉稿为 `visual-master`；
+4. 为每页建立 `slide-XX.scene.json`、clean plate、独立素材和质检证据；
+5. 调用显式的 `--editable` 模式；
+6. 读取 `<session>/editable_renders/page-XX.png` 逐页人工检查，不能只看自动报告。
 
 ```bash
 python3 scripts/generate_ppt.py \
@@ -406,6 +447,7 @@ python3 scripts/generate_ppt.py \
 - `--editable` 默认关闭；未传时，现有生成、编辑、回滚和普通 PPTX 打包行为不变。
 - `--editable-scenes` 指向包含 `slide-01.scene.json`、`slide-02.scene.json` 等文件的目录。
 - 省略 `--editable-scenes` 时，会尝试 `<session>/editable_scenes/`。
+- CLI 会在生成前拒绝不可用的回渲染环境，并在构建后自动生成 `<session>/editable_renders/page-XX.png`。
 - scene 缺页、素材丢失或格式错误时，**不得静默**退化成整页图片并声称可编辑；应保留普通 PPTX 和中间证据，然后明确失败。
 - 成功时同时保留 `<title>.pptx` 和 `<title>-editable.pptx`。
 
@@ -454,9 +496,9 @@ editable/slide-XX/
 └── quality-report.json
 ```
 
-交付前必须检查：scene schema、PPTX 对象名称与数量、mask 外像素变化、黑/白底边缘、文字修改、图片移动、Office/Keynote/LibreOffice 回渲染以及人工视觉效果。自动 `status=pass` 不能代替目测。
+交付前必须检查：scene schema、PPTX 对象名称与数量、mask 外像素变化、黑/白底边缘、文字修改、图片移动、`editable_renders/page-XX.png` 以及人工视觉效果。初始报告状态为 `rendered_pending_manual_review`；只有多模态 agent 或用户逐页目测后才能判定通过。
 
-向用户报告普通 PPTX、`-editable.pptx`、输出目录和回渲染路径，并说明哪些视觉仍作为独立图片层存在。
+向用户报告普通 PPTX、`-editable.pptx`、输出目录和 `editable_renders/` 路径，并说明哪些视觉仍作为独立图片层存在。
 
 ## 外部真实图片贴入（推荐精确流程）
 

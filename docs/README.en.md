@@ -64,6 +64,14 @@ When you need an editable deliverable, you can ask:
 
 Object-level reconstruction is used only when the user explicitly asks for editable text, separable elements, movable artwork, or similar requirements. Otherwise, the default image-first workflow continues to prioritize the strongest visual result.
 
+> ⚠️ **Editable mode requires a working local PPTX renderer.** Just like template-clone mode, it needs executable Windows PowerPoint, macOS Keynote, or LibreOffice. The Skill probes the renderer before generation, then automatically renders the finished `-editable.pptx` to `editable_renders/page-XX.png` for page-by-page visual review by a multimodal agent. Without a usable renderer, an unreviewed editable file is not reported as a successful deliverable.
+>
+> ```bash
+> python3 scripts/render_template.py --check
+> ```
+
+Editable reconstruction is **quality-first with controlled generation rounds**. Low-cost preflight checks and render reviews may run repeatedly. The workflow first uses deterministic fixes such as font, coordinate, crop, and layering changes; then original-pixel extraction and occlusion completion; then AI regeneration only for failed complex layers. A full-slide regeneration is reserved for structural composition failures.
+
 ---
 
 ## 🚀 Quick start
@@ -212,7 +220,7 @@ GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 >
 > 🔒 **Won't accidentally eat your secrets**: the script only reads the current process env, platform-injected variables, an explicit `GPT_IMAGE2_PPT_ENV`, and the skill install directory `.env` fallback. It does **not** walk up into caller project directories.
 >
-> 🪄 Template-clone mode additionally needs an executable PPTX renderer such as Windows PowerPoint, macOS Keynote, or LibreOffice. Simply ask the AI to use your `.pptx` template; the Skill checks local rendering support first and, when unavailable, explains how to install a compatible renderer or use exported template-page images instead.
+> 🪄 Template-clone mode and editable mode both require an executable PPTX renderer such as Windows PowerPoint, macOS Keynote, or LibreOffice. Template cloning renders the source deck so the AI can inspect its layouts; editable mode renders the deliverable so the AI can visually review it. The Skill checks local support first and explains how to install a compatible renderer when unavailable. Template cloning may also use manually exported template-page images.
 
 </details>
 
@@ -247,6 +255,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🆕 Changelog
 
+- **2026-07-13 · Editable render-back and iteration policy** — `--editable` now requires a working PowerPoint, Keynote, or LibreOffice renderer, automatically emits `editable_renders/page-XX.png` for multimodal review, and uses a quality-first escalation policy with repeated low-cost checks and targeted repairs before any full-slide regeneration.
 - **2026-07-11 · Editable mode** — Explicit editable-delivery requests can reconstruct complete visual masters as native text, shapes, connectors, and independent image layers. Overlapping assets follow the A1 original-pixel extraction → A2 occlusion completion → B AI separation/regeneration route. Default behavior is unchanged.
 - **2026-05-31 · Two modes for real assets** — Product screenshots, logos, charts, tables, medical images, and evidence screenshots are preserved as independent source-image objects by default; users can explicitly allow reference-based redraws.
 - **2026-05-26 · Expanded style library** — Added 22 selected styles covering business, academic, education, food, fashion, healthcare, and sustainability presentations.
