@@ -349,25 +349,30 @@ def _try_keynote_render(pptx_path: Path, out_dir: Path) -> Optional[int]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     dest_prefix = out_dir / "_keynote_export.png"
+    _cleanup_keynote_export(dest_prefix)
 
+    source_literal = json.dumps(str(pptx_path), ensure_ascii=False)
+    destination_literal = json.dumps(str(dest_prefix), ensure_ascii=False)
     script = f'''
-tell application "Keynote"
-    with timeout of 90 seconds
-        try
-            open POSIX file "{pptx_path}"
-            set theDoc to front document
-            set slideCount to count of slides of theDoc
-            export theDoc to POSIX file "{dest_prefix}" as slide images ¬
-                with properties {{image format:PNG, compression factor:1.0}}
-            close theDoc without saving
-            return slideCount
-        on error errMsg number errNum
-            -- Keynote may show a conversion dialog that blocks Apple Events;
-            -- surface the error so Python can fall back to LibreOffice.
-            return "ERR:" & errNum & ":" & errMsg
-        end try
-    end timeout
-end tell
+    tell application "Keynote"
+        with timeout of 90 seconds
+            try
+                set theDoc to open POSIX file {source_literal}
+                set slideCount to count of slides of theDoc
+                export theDoc to POSIX file {destination_literal} as slide images ¬
+                    with properties {{image format:PNG, compression factor:1.0}}
+                close theDoc without saving
+                return slideCount
+            on error errMsg number errNum
+                -- Keynote may show a conversion dialog that blocks Apple Events;
+                -- surface the error so Python can fall back to LibreOffice.
+                try
+                    close theDoc without saving
+                end try
+                return "ERR:" & errNum & ":" & errMsg
+            end try
+        end timeout
+    end tell
 '''
 
     print(f"\U0001f5a5\ufe0f  尝试 Keynote 渲染：{pptx_path.name}")
@@ -380,33 +385,93 @@ end tell
         stdout = result.stdout.strip()
         if stdout.startswith("ERR:"):
             print(f"(!) Keynote 失败 ({stdout[4:]})，回退到 LibreOffice")
+            _cleanup_keynote_export(dest_prefix)
             return None
         slide_count = int(result.stdout.strip())
     except subprocess.TimeoutExpired:
         print("(!) Keynote 导出超时，回退到 LibreOffice")
+        _cleanup_keynote_export(dest_prefix)
         return None
     except (subprocess.CalledProcessError, ValueError) as e:
         print(f"(!) Keynote 失败 ({e})，回退到 LibreOffice")
+        _cleanup_keynote_export(dest_prefix)
         return None
 
-    # Rename _keynote_export.001.png, _keynote_export.002.png, ... -> page-01.png, ...
-    existing = sorted(out_dir.glob("_keynote_export.*.png"))
-    if len(existing) != slide_count:
-        print(f"(!) Keynote 导出文件数 ({len(existing)}) 与页数 ({slide_count}) 不符，回退到 LibreOffice")
-        # Clean up partial output
-        for f in out_dir.glob("_keynote_export.*.png"):
-            f.unlink(missing_ok=True)
+    # Keynote exports a directory even when the target path ends in .png:
+    #   _keynote_export.png/_keynote_export.png.001.png
+    # Some versions instead emit numbered siblings in out_dir. Support both.
+    numbered_pages = _collect_keynote_export_pages(dest_prefix, slide_count)
+    if numbered_pages is None:
+        candidates = _keynote_export_candidates(dest_prefix)
+        print(
+            f"(!) Keynote 导出文件数/页码与页数不符 "
+            f"({len(candidates)} files, {slide_count} slides)，回退到 LibreOffice"
+        )
+        _cleanup_keynote_export(dest_prefix)
         return None
 
-    for f in existing:
-        try:
-            page_num = int(f.suffix.lstrip("."))
-        except ValueError:
-            continue
-        f.rename(out_dir / f"page-{page_num:02d}.png")
+    for page_num, source in numbered_pages:
+        destination = out_dir / f"page-{page_num:02d}.png"
+        destination.unlink(missing_ok=True)
+        source.replace(destination)
+    _cleanup_keynote_export(dest_prefix)
 
     print(f"[OK] Keynote 导出 {slide_count} 页 -> {out_dir}")
     return slide_count
+
+
+def _keynote_export_candidates(dest_prefix: Path) -> list[Path]:
+    """Find slide PNGs produced by different Keynote export layouts."""
+    candidates: list[Path] = []
+    if dest_prefix.is_file():
+        candidates.append(dest_prefix)
+    elif dest_prefix.is_dir():
+        candidates.extend(path for path in dest_prefix.rglob("*.png") if path.is_file())
+
+    candidates.extend(
+        path
+        for path in dest_prefix.parent.glob(f"{dest_prefix.name}.*.png")
+        if path.is_file()
+    )
+
+    unique: dict[str, Path] = {}
+    for path in candidates:
+        unique[str(path.resolve())] = path
+    return sorted(unique.values(), key=lambda path: str(path))
+
+
+def _collect_keynote_export_pages(
+    dest_prefix: Path,
+    slide_count: int,
+) -> Optional[list[tuple[int, Path]]]:
+    """Return validated ``(page_number, path)`` pairs for a Keynote export."""
+    candidates = _keynote_export_candidates(dest_prefix)
+    numbered: list[tuple[int, Path]] = []
+    for path in candidates:
+        match = re.search(r"\.(\d+)\.png$", path.name, flags=re.IGNORECASE)
+        if match:
+            numbered.append((int(match.group(1)), path))
+
+    # A one-slide export may be written directly to the requested target path.
+    if slide_count == 1 and len(candidates) == 1 and not numbered:
+        numbered = [(1, candidates[0])]
+
+    expected = list(range(1, slide_count + 1))
+    actual = sorted(page_number for page_number, _ in numbered)
+    if len(candidates) != slide_count or actual != expected:
+        return None
+    return sorted(numbered, key=lambda item: item[0])
+
+
+def _cleanup_keynote_export(dest_prefix: Path) -> None:
+    """Remove only the temporary files/directories owned by the Keynote export."""
+    if dest_prefix.is_dir():
+        shutil.rmtree(dest_prefix, ignore_errors=True)
+    elif dest_prefix.exists():
+        dest_prefix.unlink(missing_ok=True)
+    for path in dest_prefix.parent.glob(f"{dest_prefix.name}.*.png"):
+        if path.is_file():
+            path.unlink(missing_ok=True)
 
 
 def _convert_pptx_to_pdf(pptx_path: Path, out_pdf: Path) -> None:
