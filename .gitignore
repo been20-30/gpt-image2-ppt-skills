@@ -229,6 +229,7 @@ test_runs/
 # Local evaluation / test harnesses are useful while developing, but should not
 # be published as part of the skill package.
 tests/
+regression_tests/
 evals/
 benchmarks/
 scripts/gen_demo_images.py
