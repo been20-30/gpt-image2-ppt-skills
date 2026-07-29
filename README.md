@@ -106,7 +106,7 @@ AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图�
 
 ## ✨ 能做什么
 
-- 🎨 **十套精选风格 + 扩展风格库** — 内置 Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Riso / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration，并持续补充优质风格
+- 🎨 **在线模板画廊** — 集中展示目前收录的模板，可按场景和风格搜索、筛选，复制喜欢的模板 Prompt 后直接交给 AI 使用
 - 🧭 **Prompt Recipes 示例库** — `examples/` 提供产品发布、融资路演、周报、课程课件、论文答辩、读书分享等常见场景的 `slides_plan.md` 起步模板
 - 🪄 **模板克隆模式** — 丢一个 `.pptx` 进去，AI 会参考原模板的版式、配色和插画语汇，像上面那张图一样换成新内容
 - 🎯 **自然语言精准编辑** — 直接说“改第 3 页副标题”“删掉页脚”“把三个数据换成新数字”，AI 会通过图生图只重生成目标页，尽量保持原风格和版式不变
@@ -128,30 +128,13 @@ AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图�
 | 只改复杂多页 PPT 的某一页 | 适合 | 只更新目标页，其他页不重新生成。 |
 | 密集表格、财报、法务长文 | 不建议直接承诺 | 小字和数字需要更严格人工验收。 |
 
-## 🎨 十种内置风格
+## 🎨 在线模板画廊
 
-> 下图为 10 套风格在同一主题「**如何用 gpt-image-2 做 PPT**」下各生成一张封面的对照。全部由 `gpt-image-2` 直出，未经 PS。
+目前收录的模板统一通过 [SlideCraft Template Gallery](https://slidecraft-template-gallery.vercel.app) 展示。你可以按场景和风格搜索、筛选，查看模板的真实生成效果；选中喜欢的模板后，复制 Prompt 并直接交给 Codex、Claude Code 或其他 AI 助手使用。
 
-![10 种风格封面对照 · 同一主题直出](docs/assets/style-gallery.jpg)
+[![SlideCraft Template Gallery：浏览并复制喜欢的 PPT 模板](docs/assets/template-gallery.jpg)](https://slidecraft-template-gallery.vercel.app)
 
-| 风格 ID | 一句话定位 | 适用场景 |
-| --- | --- | --- |
-| `gradient-glass` | Apple Vision OS / Spatial Glass | AI 产品发布、技术分享、创意提案 |
-| `clean-tech-blue` | Stripe / Linear 级蓝白 | 融资路演、商业计划书、企业战略 |
-| `vector-illustration` | 复古矢量插画 + 黑描边 | 教育培训、品牌故事、社区分享 |
-| `editorial-mono` | Kinfolk / Monocle 编辑设计 | 品牌发布、文化访谈、读书分享 |
-| `dark-aurora` | Linear / Vercel 深色霓虹 | AI 产品、开发者工具、技术分享 |
-| `risograph` | Riso 双套色印刷 + 网点纹理 | 创意工作室、文创品牌、独立 zine |
-| `japanese-wabi` | 无印 / 原研哉式侘寂 | 茶道、生活方式、奢侈品、文化讲座 |
-| `swiss-grid` | Bauhaus / Vignelli 国际主义网格 | 学术报告、博物馆展陈、严肃汇报 |
-| `hand-sketch` | Sketchnote / 白板手绘 | 工作坊、产品 brainstorming、培训 |
-| `y2k-chrome` | Y2K 千禧液态金属 + 蝴蝶贴纸 | 潮牌、文娱、品牌联名、Z 世代营销 |
-
-## 🧬 扩展风格库
-
-已从公开渠道 500+ 个 PPT 模板中筛选补充 22 个优质风格。后续还会持续补充，也欢迎大家提供好看的 PPT 模板或风格参考。
-
-更多风格展示、风格 ID、特色和适用场景见：[`docs/distilled-styles.md`](./docs/distilled-styles.md)。
+> 点击上图进入模板画廊。模板会持续补充，README 不再维护容易过时的完整模板清单。
 
 ---
 
@@ -250,10 +233,12 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 - [PPT 实现逻辑](./docs/ppt-implementation-logic.md) — 图片生成、真实素材和 PPTX 打包流程
 - [真实素材覆盖逻辑](./docs/external_image_overlay_logic.txt) — 外部图片的槽位规划与后贴链路
 - [编辑能力测评](./docs/edit_guide.md) — 可稳定修改的内容、限制和验收建议
-- [风格库](./docs/distilled-styles.md) — 内置及扩展风格预览
+- [在线模板画廊](https://slidecraft-template-gallery.vercel.app) — 查看目前收录的模板、真实效果并复制 Prompt
+- [风格定义参考](./docs/distilled-styles.md) — 仓库内置风格 ID 与适用场景
 
 ## 🆕 更新记录
 
+- **2026-07-29 · 在线模板画廊**：目前收录的模板改为通过 SlideCraft Template Gallery 统一展示，支持搜索、筛选、查看真实效果和复制 Prompt 给 AI 使用。
 - **2026-07-13 · 可编辑回渲染与轮次策略**：`--editable` 现在像模板克隆一样强制检查 PowerPoint / Keynote / LibreOffice，完成后自动输出 `editable_renders/page-XX.png` 供多模态验收；工作流改为效果优先、低成本检查可多轮、生成修复逐级升级并优先局部处理。
 - **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
 - **2026-05-31 · 真实素材双模式**：产品截图、logo、图表、表格、医学影像、证据截图等真实素材默认保真嵌入为独立图片对象；用户明确允许时，也可以作为参考图融合重绘。
