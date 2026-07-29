@@ -91,6 +91,8 @@ The assistant installs it for the current environment and tells you when to rest
 
 > I uploaded `company-template.pptx`. Follow its layout, palette, and visual language to make an 8-slide deck about our annual product strategy.
 
+If you do not already have a template, browse [SlideCraft Template Gallery](https://slidecraft-template-gallery.vercel.app), copy a template you like, and send the copied prompt directly to your AI assistant.
+
 **Request an editable deliverable**
 
 > Create this deck in editable mode. Keep text and basic graphics directly editable, make the complex hero visual independently movable, and preserve the complete `gpt-image-2` art direction.
@@ -101,7 +103,7 @@ The assistant organizes the content, confirms one visual sample, generates the f
 
 ## ✨ What it does
 
-- 🎨 **10 curated styles + an expanded style library** — built-ins include Spatial Glass / Tech Blue / Editorial Mono / Dark Aurora / Risograph / Wabi / Swiss Grid / Hand Sketch / Y2K Chrome / Vector Illustration; on 2026-05-26, 22 additional high-quality styles were selected from 500+ publicly available PPT templates
+- 🎨 **Online template gallery** — browse all currently collected templates, search or filter by use case and style, then copy a template prompt directly into your AI assistant
 - 🧭 **Prompt Recipes** — `examples/` provides starter `slides_plan.md` templates for common scenarios such as product launches, investor pitches, weekly reports, courseware, thesis defenses, and book talks
 - 🪄 **Template-clone mode** — drop in any `.pptx`; the agent follows its layout, palette, and illustration language, then swaps in your new content
 - 🎯 **Precise natural-language edits** — say "change slide 3's subtitle", "remove the footer", or "replace these three metrics"; the agent regenerates only the target slide through image-to-image editing while trying to preserve the original style and layout
@@ -124,30 +126,17 @@ The assistant organizes the content, confirms one visual sample, generates the f
 
 If the user only has a rough topic and no complete outline yet, the agent can first consult [`examples/`](../examples/) to draft a scenario-appropriate `slides_plan.md`, ask for confirmation, then convert it to `slides_plan.json` and continue with generation.
 
-## 🎨 The 10 built-in styles
+## 🎨 Online template gallery
 
-> Below: the 10 styles each generating one cover under the same topic — "**How to make a PPT with gpt-image-2**". All covers are raw `gpt-image-2` output, no PS.
+All currently collected templates are presented in [SlideCraft Template Gallery](https://slidecraft-template-gallery.vercel.app). Search or filter by use case and visual style, review real generated outputs, then copy the prompt from any template and send it directly to Codex, Claude Code, or another AI assistant.
 
-![10 styles · same topic, raw gpt-image-2 output](assets/style-gallery.jpg)
+[![SlideCraft Template Gallery — browse and copy presentation templates](assets/template-gallery-en.jpg)](https://slidecraft-template-gallery.vercel.app)
 
-| Style ID | One-liner | Use cases |
-| --- | --- | --- |
-| `gradient-glass` | Apple Vision OS / Spatial Glass | AI product launches, technical talks, creative pitches |
-| `clean-tech-blue` | Stripe / Linear-grade blue & white | Investor decks, business plans, corporate strategy |
-| `vector-illustration` | Retro vector + black outlines | Education, brand storytelling, community sharing |
-| `editorial-mono` | Kinfolk / Monocle editorial | Brand reveals, cultural interviews, book talks |
-| `dark-aurora` | Linear / Vercel dark neon | AI products, dev tools, technical talks |
-| `risograph` | Riso 2-spot-color print + halftone | Creative studios, indie zines, design agencies |
-| `japanese-wabi` | Muji / Hara Kenya wabi-sabi | Tea ceremony, lifestyle, luxury, cultural lectures |
-| `swiss-grid` | Bauhaus / Vignelli international grid | Academic reports, museum exhibits, serious dashboards |
-| `hand-sketch` | Sketchnote / whiteboard | Workshops, product brainstorming, training |
-| `y2k-chrome` | Y2K liquid chrome + butterfly stickers | Streetwear, entertainment, brand collabs, Gen-Z marketing |
+Open any template to preview the full slide set and copy either its template ID or complete prompt:
 
-## 🧬 Expanded style library: 22 new styles added on 2026-05-26
+[![SlideCraft Template Gallery template detail — preview slides and copy the prompt](assets/template-gallery-detail-en.jpg)](https://slidecraft-template-gallery.vercel.app/templates/abstract-art-showcase)
 
-On 2026-05-26, we added 22 high-quality styles selected from 500+ publicly available PPT templates. More styles will continue to be added, and good PPT template or style references are welcome.
-
-See the full style table, thumbnails, style IDs, visual traits, and use cases in [`distilled-styles.md`](./distilled-styles.md).
+> Click either image to open the corresponding page. New templates are added continuously, so this README no longer maintains a complete list that can quickly become outdated.
 
 ---
 
@@ -240,17 +229,9 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ---
 
-## 📚 Technical documentation
-
-- [SKILL.md](../SKILL.md) — authoritative workflow, behavior rules, and advanced usage
-- [Installation guide](./install.md) — installation across supported agents
-- [PPT implementation logic](./ppt-implementation-logic.md) — image generation, real assets, and PPTX packaging
-- [External-image overlay logic](./external_image_overlay_logic.txt) — slot planning and source-image overlay flow
-- [Editing capability report](./edit_guide.md) — reliable edit cases, limitations, and review guidance
-- [Style library](./distilled-styles.md) — built-in and expanded style previews
-
 ## 🆕 Changelog
 
+- **2026-07-29 · Online template gallery** — Current templates now live in SlideCraft Template Gallery, with search, filters, real output previews, and copy-ready prompts for AI assistants.
 - **2026-07-13 · Editable render-back and iteration policy** — `--editable` now requires a working PowerPoint, Keynote, or LibreOffice renderer, automatically emits `editable_renders/page-XX.png` for multimodal review, and uses a quality-first escalation policy with repeated low-cost checks and targeted repairs before any full-slide regeneration.
 - **2026-07-11 · Editable mode** — Explicit editable-delivery requests can reconstruct complete visual masters as native text, shapes, connectors, and independent image layers. Overlapping assets follow the A1 original-pixel extraction → A2 occlusion completion → B AI separation/regeneration route. Default behavior is unchanged.
 - **2026-05-31 · Two modes for real assets** — Product screenshots, logos, charts, tables, medical images, and evidence screenshots are preserved as independent source-image objects by default; users can explicitly allow reference-based redraws.

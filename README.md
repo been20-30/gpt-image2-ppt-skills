@@ -230,16 +230,6 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ---
 
-## 📚 技术文档
-
-- [SKILL.md](./SKILL.md) — Skill 的权威工作流、行为规则和高级调用说明
-- [安装说明](./docs/install.md) — 不同 Agent 的安装方式
-- [PPT 实现逻辑](./docs/ppt-implementation-logic.md) — 图片生成、真实素材和 PPTX 打包流程
-- [真实素材覆盖逻辑](./docs/external_image_overlay_logic.txt) — 外部图片的槽位规划与后贴链路
-- [编辑能力测评](./docs/edit_guide.md) — 可稳定修改的内容、限制和验收建议
-- [在线模板画廊](https://slidecraft-template-gallery.vercel.app) — 查看目前收录的模板、真实效果并复制 Prompt
-- [风格定义参考](./docs/distilled-styles.md) — 仓库内置风格 ID 与适用场景
-
 ## 🆕 更新记录
 
 - **2026-07-29 · 在线模板画廊**：目前收录的模板改为通过 SlideCraft Template Gallery 统一展示，支持搜索、筛选、查看真实效果和复制 Prompt 给 AI 使用。
