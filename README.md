@@ -94,6 +94,8 @@ AI 会根据当前环境完成安装并提示你重启。
 
 > 我上传了 `company-template.pptx`，请参考它的版式、配色和视觉语言，做一份关于「年度产品战略」的 8 页 PPT。
 
+如果手头没有现成模板，也可以打开 [SlideCraft Template Gallery](https://slidecraft-template-gallery.vercel.app)，在网页中浏览并复制喜欢的模板，再把复制的模板内容直接发给 AI 使用。
+
 **可编辑交付**
 
 > 帮我生成一份可编辑模式的 PPT。文字和基础图形要能直接修改，复杂主视觉要能单独移动，同时尽量保留 gpt-image-2 的完整设计感。
