@@ -134,7 +134,11 @@ AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图�
 
 [![SlideCraft Template Gallery：浏览并复制喜欢的 PPT 模板](docs/assets/template-gallery.jpg)](https://slidecraft-template-gallery.vercel.app)
 
-> 点击上图进入模板画廊。模板会持续补充，README 不再维护容易过时的完整模板清单。
+点进任意模板后，可以逐页预览整套版式，并复制模板 ID 或完整 Prompt：
+
+[![SlideCraft Template Gallery 模板详情页：逐页预览并复制 Prompt](docs/assets/template-gallery-detail.jpg)](https://slidecraft-template-gallery.vercel.app/templates/abstract-art-showcase)
+
+> 点击图片进入对应页面。模板会持续补充，README 不再维护容易过时的完整模板清单。
 
 ---
 
