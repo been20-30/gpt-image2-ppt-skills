@@ -141,7 +141,7 @@ Open any template to preview the full slide set and copy either its template ID 
 
 The gallery is evaluated as complete presentations rather than isolated cover images. New templates are tested across cover, section, content, and data slides and compared with the existing version. A published template is updated only when overall quality improves without a noticeable regression on key slides.
 
-No knowledge of the internal implementation is required. Copy a prompt from the gallery or upload your own `.pptx` as a reference template. Existing published templates are not overwritten by unverified candidates.
+To use a gallery style, copy its prompt and send it to your AI assistant. To follow your own brand template, upload the `.pptx`, preview one slide first, and then generate the full deck.
 
 ---
 
