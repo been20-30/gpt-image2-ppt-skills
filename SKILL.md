@@ -1,6 +1,6 @@
 ---
 name: gpt-image2-ppt
-description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- use any style in styles/<id>.md or mimic a user-supplied .pptx template; outputs high-res slide PNGs and a 16:9 .pptx. Use when the user asks to make a presentation, slides, deck, pitch deck, investor PPT, magazine-style PPT, or 做一份 PPT / 生成幻灯片 / 用 gpt-image 生成 PPT / 按这个模板生成 PPT.
+description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- use any style in styles/STYLE_ID.md or mimic a user-supplied .pptx template; outputs high-res slide PNGs and a 16:9 .pptx. Use when the user asks to make a presentation, slides, deck, pitch deck, investor PPT, magazine-style PPT, or 做一份 PPT / 生成幻灯片 / 用 gpt-image 生成 PPT / 按这个模板生成 PPT.
 ---
 
 # gpt-image2-ppt -- 用 gpt-image-2 生成 PPT
@@ -78,18 +78,65 @@ description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- u
 3. 基于用户主题改写一份新的 `slides_plan.md`，不要直接改 recipe 源文件。
 4. 与用户确认页数、每页标题和关键内容。
 5. 用户确认后再执行 `md_to_plan.py` 转 json，并继续下面的指定风格或模板克隆流程。
-### 内置风格的 layout bank sidecar（推荐新格式）
+### 内置风格的 layout bank sidecar（唯一运行格式）
 
 内置风格采用“MD 给人看，JSON 给机器用”的双文件结构：
 
 ```text
 styles/<style-id>.md            # 风格说明、设计令牌、基础提示词
-styles/<style-id>.layouts.json  # 可选；每页 layout bank，供自动分配页面形态
+styles/<style-id>.layouts.json  # 必需；每页 layout bank，供自动分配页面形态
 ```
 
-当 `--style styles/<style-id>.md` 存在同名 `.layouts.json` 时，`generate_ppt.py` 会自动把它作为无 reference image 的 TemplateProfile 使用：优先通过 `assign_layouts()` 分配不同 layout，把 `visual_signature` / `content_capacity` / `best_for` / `avoid_for` / `variation_tags` 写入 prompt，并把命中的 layout 精简信息写入 `metadata.json`。
+`generate_ppt.py` 会把同名 `.layouts.json` 作为无 reference image 的 RuntimeProfile 使用：通过 `assign_layouts()` 分配不同 layout，把 `visual_signature` / `content_capacity` / `best_for` / `avoid_for` / `variation_tags` 写入 prompt，并把命中的 layout 精简信息写入 `metadata.json`。
 
-当前所有内置 `styles/*.md` 都应配套同名 `.layouts.json`。以后蒸馏公开模板或内置风格时，优先补这个 JSON sidecar；不要把多页 layout 只压缩进单个 MD 的“布局系统”文字段落。
+当前所有内置 `styles/*.md` 都必须配套同名 `.layouts.json`。只有 Markdown、缺少 sidecar 的旧风格会在出图前直接报错，不再静默走旧 Prompt；先把它迁移为配对格式。以后蒸馏公开模板或新增内置风格时，必须同时产出 JSON sidecar；不要把多页 layout 只压缩进单个 MD 的“布局系统”文字段落。
+
+### 统一 RuntimeProfile 运行内核
+
+严格模板克隆和结构化 style sidecar 都先编译成同一种 RuntimeProfile，再统一经过 `assign_layouts()`、页面 Profile 附着、prompt 编译和 metadata 记录。入口适配器只保留必要差异：
+
+- `template-clone`：来自 `--template-profile` 或模板 vision 分析；layout 可携带 `reference_image`，只有 `--template-strict` 才实际传入生图。
+- `distilled-style`：来自 `<style>.md` + `<style>.layouts.json`；使用内容路由和多布局，不依赖原模板图片。
+
+RuntimeProfile 统一记录 `source_kind`、固定的 `prompt_strategy=layout-fields`、`layouts` 和 `capabilities`（routing / evidence / reference / portability）。优先级固定为：有效模板 Profile > style RuntimeProfile；模板分析没有 layouts 时必须真正回退到结构化 style，而不是只打印提示。运行时不再包含 `legacy-freeform` 或 synthetic layout 分支。
+
+## 在线模板蒸馏与闭环验证
+
+用户要求从 Slidesgo 等公开预览页筛选、评分或蒸馏模板时，使用仓库内的 `skills/web-ppt-template-distiller/SKILL.md`，不要把网页预览直接当普通 `--template-images` 批量仿作。蒸馏器只迁移抽象设计规律，不复制来源图片、Logo、人物、图标、水印、文案或独特页面组合。
+
+推荐生产路径：
+
+```text
+公开模板预览
+→ 来源质量评分
+→ 带来源证据和内容路由的结构化 style profile + 多原型 layout grammar
+→ 封面 / 章节 / 内容 / 数据验证页
+→ 页面适配 + 跨页一致性 + 复制风险评估
+→ 自动修订 profile（最多 N 轮，只有净提升才替换 champion，否则回滚）
+→ staged style
+→ 人工批准后进入 styles/
+```
+
+闭环命令：
+
+```bash
+python3 skills/web-ppt-template-distiller/scripts/score_and_distill.py \
+  --url <template-detail-url> \
+  --style-id <style-id> \
+  --name "<Style Name>" \
+  --closed-loop \
+  --max-validation-rounds 2
+```
+
+只有状态为 `validated` 的结果可以写入目标 style 目录。`validation_review` 表示达到轮次上限仍未通过，只会在 provenance 目录保留 `review-candidate.md` / `review-candidate.layouts.json`，必须人工查看 `.ppt-template-distill/provenance/<style-id>/evaluations/`；`validation_reject` 表示高复制风险或明确拒绝，不得产生正式 style。JSON profile 是权威源，Markdown 必须由 profile 渲染生成，禁止两边独立手改导致漂移。
+
+闭环自动发布还要求 `copying_risk=low`、所有角色的可读性/角色适配达标、文字准确率达到门槛，并使用 best-so-far 轮次而不是最后一次尝试。可复用角色优先提供多个带 `routing` / `evidence_pages` 的布局原型，避免把固定测试文案的项目数写成整个页面角色的唯一规则。
+
+迁移旧风格或准备正式发布时，再加 `--validation-suite generalization` 跑保留题；它会额外验证对比页和“表格＋时间线”数据页，并使用与正式生成相同的内容路由。日常低成本迭代仍可用默认 standard suite，避免每轮无条件增加图片成本。
+
+批量升级已有蒸馏风格时，使用子 Skill 的 `batch_migrate_styles.py`：它逐套恢复来源证据、跑同题旧版/新版对照、断点记录 `promoted/review/failed`，并且只允许 `migration-comparison.json` 明确晋级的 `.md + .layouts.json` 配对发布。`--publish` 会先备份旧配对；图片渠道中断时保留已生成角色页和已验证 champion，以退出码 75 暂停整个队列，恢复后从当前套续跑，不把进程退出码误当成视觉通过，也不让后续模板重复撞维护窗口。
+
+图片渠道维护期间可先用 `--prepare-only` 把证据充足的旧 profile 确定性编译到当前结构，候选只写入 migration workdir；页级证据不完整的保持 `needs-vision`。`--repair-with-vision` 只为这些歧义模板看原始预览补结构，仍不生图、不发布。所有 prepared 候选最终都必须补跑 generalization 与同题迁移门禁。
 
 ## 模板克隆模式
 
@@ -221,44 +268,31 @@ GPT_IMAGE_QUALITY=high                     # low / medium / high / auto
 
 如果还没有 `slides_plan.json`，先按下面「生成流程」第 2-3 步写 `slides_plan.md` → `python3 scripts/md_to_plan.py ...` 转 json。
 
-**2. 读风格模板**
+**2. 用统一运行时准备 prompt**
 
-读 `styles/<id>.md`，取 `## 基础提示词模板` section 作为 base prompt。
+不要手工复刻 `generate_prompt()`。运行 `--prepare-only`，让 API 直连和 Codex 原生路径共享同一个 RuntimeProfile、layout routing 和 prompt compiler：
 
-**3. 构造每页 prompt**
-
-参考 `generate_ppt.py` 的 `generate_prompt()` 逻辑，核心规则：
-
-- 封面（cover/slide 1）：标题/副标题为视觉焦点
-- 数据页（data/最后一页）：突出关键数字、对比或结论
-- 内容页（content/其余页）：按层级、对齐、留白结构化呈现
-- **所有文字必须简体中文**，字体用思源黑体/苹方，严禁草书/艺术字
-- **16:9 横版宽屏**（landscape, widescreen），prompt 里明确说"宽度明显大于高度、绝对不要方图"
-
-```text
-{style 基础提示词模板}
-
----
-
-现在请生成本组中的【{封面页/内容页/数据页}】，{对应 hint}
-本页要呈现的内容如下（请按本风格美学重新设计版式）：
-
-{slide content}
-
-【强制语言与字体要求】
-1. 所有文字必须使用简体中文，严禁英文（专有名词除外）
-2. 中文字体使用思源黑体或苹方，严禁草书、艺术字
-3. 标题粗体，正文常规，字号对比清晰
-
-【画面比例 — 强制】16:9 横版宽屏 (landscape, widescreen)，宽度明显大于高度，绝对不要方图或竖图。
+```bash
+python3 scripts/generate_ppt.py \
+  --plan slides_plan.json \
+  --style styles/<id>.md \
+  --prepare-only \
+  --output outputs/<timestamp>
 ```
+
+该命令不调用图片 API，也不打包 PPTX；它会生成 `prompts.json`、逐页 prompt 文本和 `metadata.json`。只做单页冒烟时同时传 `--slides 1`。
+
+**3. 读取每页编译结果**
+
+从 `outputs/<timestamp>/prompts.json` 读取每页 `prompt`、`reference_image`、`asset_reference_image` 和 `layout_id`。不要根据 Markdown 重新拼一份 Prompt，否则会绕过结构化 layout bank。
 
 **4. 调 image_generation tool 出图**
 
 对每页调你的 `image_generation` tool：
 
-- `prompt`: 上面拼好的完整 prompt
+- `prompt`: `prompts.json` 中该页已经编译好的完整 prompt
 - `output_format`: `png`
+- 如果记录了 `reference_image` / `asset_reference_image`，按原顺序作为图片 reference 传入
 - 将返回的图片保存到 `outputs/<timestamp>/images/slide-NN.png`（NN 为两位页码）
 
 可以并发（建议 ≤4 并发，避免限流）。
@@ -291,7 +325,7 @@ print('done')
 
 ### 模板克隆模式（Codex 原生路径）
 
-你自己就是多模态 agent——直接 `Read` 模板每页 PNG 抽取视觉风格，写成 `template_profile.json`（schema 见 `template_analyzer.py` 里的 `TemplateProfile`，每个 layout 写上 `reference_image`），然后按上面流程出图时把对应模板页作为 reference image 传给 `image_generation` tool。
+你自己就是多模态 agent——直接 `Read` 模板每页 PNG 抽取视觉风格，写成 `template_profile.json`（schema 见 `template_analyzer.py` 里的 `TemplateProfile`，每个 layout 写上 `reference_image`），再用 `--template-profile template_profile.json --template-strict --prepare-only` 编译每页 Prompt 和 reference；不要手工选择另一套 Prompt 拼接逻辑。
 
 **不需要配 `VISION_*`**——你就是 vision。
 
@@ -777,6 +811,7 @@ gpt-image2-ppt-skills/
 |---- README.md               # 项目说明
 |---- scripts/                # 所有 Python 脚本
 |   |---- generate_ppt.py         # 主入口（CLI）
+|   |---- runtime_profile.py      # 模板克隆 / 结构化 style sidecar 的统一运行时适配器
 |   |---- md_to_plan.py           # slides_plan.md -> slides_plan.json 转换器（CLI）
 |   |---- render_template.py      # PPTX -> 每页 PNG 的辅助脚本（CLI + library）
 |   |---- image_generator.py      # gpt-image-2 wrapper（支持 reference image，openai backend）
@@ -792,6 +827,7 @@ gpt-image2-ppt-skills/
 |   |---- product-launch/             investor-pitch/
 |   |---- weekly-report/              courseware/
 |   |---- thesis-defense/             book-sharing/
+|---- skills/web-ppt-template-distiller/ # 在线模板评分、蒸馏与闭环验证子 Skill
 |---- docs/README.en.md       # 英文 README
 |---- install_as_skill.sh     # 一键安装到 agent skills 目录
 |---- requirements.txt        # requests + python-dotenv + python-pptx + jsonschema + pymupdf

@@ -18,7 +18,8 @@ generate_ppt.py
 │
 ├── --rollback ───────→ cmd_rollback_slide()  ← 需 --session + --to-version
 │
-└── (默认) ───────────→ 生成模式               ← 需 --plan + (--style | --template-pptx)
+└── (默认) ───────────→ 生成/准备模式            ← 需 --plan + (--style | --template-pptx | --template-profile)
+                         └─ --prepare-only 只编译 prompts/metadata，不出图、不打包
 ```
 
 ---
@@ -28,42 +29,25 @@ generate_ppt.py
 ### 2.1 内置风格 (`--plan` + `--style`)
 
 ```text
-slides_plan.md                      styles/<id>.md
-	      │                                    │
-	      │  md_to_plan.py                     │
-	      ▼                                    │
-slides_plan.json                           │
-	      │                                    ├─ optional: styles/<id>.layouts.json
-	      │                                    │   (layout bank sidecar)
-	      │                                    │
-	      │  Agent 综合两者，为每页构造 slide_spec  │
-      │  (type / content / position /       │
-      │   style / color)                    │
-      │  写入每页 .slide_spec 字段            │
-      ▼                                    ▼
-┌────────────────────────────────────────────────────┐
-│                  generate_ppt.py                    │
-│                                                    │
-│  style layout sidecar 存在?                          │
-│   ├── YES → assign_layouts()                         │
-│   │        → render_prompt_from_template()            │
-│   │        → 保留页面形态并写入 template_layout_profile │
-│   └── NO  → slide_spec 有 elements?                  │
-│        ├── YES → generate_prompt_from_spec()          │
-│        └── NO  → generate_prompt()                    │
-│                                                    │
-│  并发派发 → gpt-image-2 出图                          │
-│       │                                            │
-│       ▼                                            │
-│  outputs/<ts>/images/slide-NN.png                  │
-│       │                                            │
-│       ├── prompts.json      (兼容旧格式)              │
-│       ├── metadata.json     (slide_spec 版本历史)     │
-│       └── <title>.pptx      (16:9 打包)              │
-└────────────────────────────────────────────────────┘
+slides_plan.md ── md_to_plan.py ──→ slides_plan.json (+ optional slide_spec)
+                                             │
+styles/<id>.md + styles/<id>.layouts.json ───┤
+                                             ▼
+                                  style RuntimeProfile adapter
+                                             │
+                                             ▼
+                         assign_layouts() → attach page profile
+                                             │
+                                             ▼
+                            one prompt compiler (layout-fields)
+                                             │
+                     ┌───────────────────────┴──────────────────────┐
+                     │                                              │
+              --prepare-only                               normal generation
+          prompts.json + metadata.json                 gpt-image-2 → PNG → PPTX
 ```
 
-内置风格推荐采用双文件格式：`styles/<id>.md` 存人读风格说明，`styles/<id>.layouts.json` 存机器读 layout bank。JSON sidecar 与 TemplateProfile 兼容，但通常不含 `reference_image`，因此只提供页面形态、容量和适用场景，不做像素级模板页参考。
+内置风格只接受配对格式：`styles/<id>.md` 存人读风格说明，`styles/<id>.layouts.json` 存机器读 layout bank。缺少 sidecar 会在图片 API 调用前直接失败，不再回退到 Markdown-only prompt。JSON sidecar 与 TemplateProfile 兼容，但通常不含 `reference_image`，因此只提供页面形态、容量和适用场景，不做像素级模板页参考。
 
 ### 2.2 模板克隆 (`--template-pptx`)
 
@@ -78,8 +62,8 @@ template_renders/<stem>/page-NN.png
       ▼
 template_cache/<sha256>.json  (TemplateProfile: layouts + variation metadata + global_style)
       │
-      │  assign_layouts() 优先分配未使用 layout
-      │      → coerce_fields() → render_prompt_from_template()
+      │  template RuntimeProfile adapter
+      │      → 与结构化 style 共用 assign_layouts() 和 layout-fields prompt compiler
       ▼
   每页 prompt ──→ gpt-image-2
                   (可选 --template-strict → 模板页作 reference image)

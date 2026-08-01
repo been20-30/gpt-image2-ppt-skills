@@ -16,6 +16,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+try:
+    from .runtime_profile import (
+        normalize_runtime_profile,
+        runtime_profile_summary,
+    )
+except ImportError:
+    from runtime_profile import (
+        normalize_runtime_profile,
+        runtime_profile_summary,
+    )
+
 # =============================================================================
 # Constants
 # =============================================================================
@@ -847,7 +858,7 @@ def load_style_layout_profile(
     style_path: str,
     style_template: str = "",
 ) -> Optional[Dict[str, Any]]:
-    """Load optional styles/<id>.layouts.json as a TemplateProfile-compatible dict."""
+    """Load styles/<id>.layouts.json as a RuntimeProfile-compatible dict."""
     sidecar = _style_layout_sidecar_path(style_path)
     if not sidecar.is_file():
         return None
@@ -856,78 +867,54 @@ def load_style_layout_profile(
         profile = json.load(f)
     if not isinstance(profile, dict):
         raise ValueError(f"Style layout sidecar must be a JSON object: {sidecar}")
-
     layouts = profile.get("layouts")
     if not isinstance(layouts, list) or not layouts:
         raise ValueError(f"Style layout sidecar must contain non-empty layouts: {sidecar}")
+    return normalize_runtime_profile(
+        profile,
+        source_kind="distilled-style",
+        global_style=style_template,
+        profile_path=str(sidecar),
+        style_id=Path(style_path).stem,
+    )
 
-    style_summary = str(profile.get("global_style") or "").strip()
-    if style_template and style_summary:
-        profile["global_style"] = f"{style_template}\n\n【内置 layout bank 风格摘要】\n{style_summary}"
-    elif style_template:
-        profile["global_style"] = style_template
-    else:
-        profile["global_style"] = style_summary
 
-    profile.setdefault("version", "2")
-    profile.setdefault("source", sidecar.name)
-    profile.setdefault("source_hash", "")
-    profile.setdefault("theme", {})
-    profile.setdefault("style_id", Path(style_path).stem)
-    profile["is_style_layout_bank"] = True
+def load_style_runtime_profile(
+    style_path: str,
+    style_template: str = "",
+) -> Dict[str, Any]:
+    """Compile a sidecar-backed style or reject the obsolete Markdown-only form."""
+    sidecar_profile = load_style_layout_profile(style_path, style_template)
+    if sidecar_profile:
+        return sidecar_profile
+    sidecar = _style_layout_sidecar_path(style_path)
+    raise ValueError(
+        "Markdown-only styles are no longer executable. "
+        f"Missing required layout profile: {sidecar}. "
+        "Migrate the style to the paired <style>.md + <style>.layouts.json contract "
+        "with non-empty layouts, routing, content_capacity, and json_schema fields."
+    )
 
-    valid_types = {"cover", "agenda", "section", "content", "data", "quote", "closing", "other"}
-    for idx, layout in enumerate(layouts):
-        if not isinstance(layout, dict):
-            raise ValueError(f"Style layout entry #{idx + 1} must be an object: {sidecar}")
-        layout.setdefault("id", f"layout-{idx + 1:02d}")
-        layout.setdefault("page_index", idx)
-        if layout.get("page_type") not in valid_types:
-            layout["page_type"] = "content"
-        layout.setdefault("summary", "")
-        layout["visual_signature"] = str(layout.get("visual_signature") or "").strip()
-        capacity = layout.get("content_capacity")
-        layout["content_capacity"] = capacity if isinstance(capacity, (dict, list, str)) else {}
-        for key in ("best_for", "avoid_for", "variation_tags"):
-            val = layout.get(key)
-            if isinstance(val, list):
-                layout[key] = [str(x).strip() for x in val if str(x).strip()]
-            elif isinstance(val, str) and val.strip():
-                layout[key] = [val.strip()]
-            else:
-                layout[key] = []
-        layout["external_image_slots"] = (
-            layout.get("external_image_slots")
-            if isinstance(layout.get("external_image_slots"), list)
-            else []
-        )
-        layout.setdefault("reuse_friendly", layout.get("page_type") != "cover")
-        layout.setdefault("reuse_reason", "")
-        layout["reference_image"] = layout.get("reference_image") or None
-        layout.setdefault("json_schema", {
-            "type": "object",
-            "properties": {
-                "title": {"type": "string", "minLength": 1, "maxLength": 40},
-                "body": {"type": "string", "minLength": 0, "maxLength": 600},
-            },
-            "required": ["title"],
-            "additionalProperties": True,
-        })
 
-    return profile
+def select_runtime_profile(
+    template_candidate: Optional[Dict[str, Any]],
+    style_candidate: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Apply the single documented precedence rule for runtime profiles."""
+    if template_candidate and template_candidate.get("layouts"):
+        return template_candidate
+    if style_candidate and style_candidate.get("layouts"):
+        return style_candidate
+    return None
 
 
 def _normalize_template_profile_references(profile: Dict[str, Any], profile_path: str) -> Dict[str, Any]:
-    """Resolve relative layout reference_image paths next to template_profile.json."""
-    base_dir = Path(profile_path).resolve().parent
-    for layout in profile.get("layouts", []) or []:
-        ref = layout.get("reference_image")
-        if not ref or os.path.isabs(str(ref)):
-            continue
-        candidate = (base_dir / str(ref)).resolve()
-        if candidate.exists():
-            layout["reference_image"] = str(candidate)
-    return profile
+    """Adapt a template-authored profile into the unified RuntimeProfile."""
+    return normalize_runtime_profile(
+        profile,
+        source_kind="template-clone",
+        profile_path=profile_path,
+    )
 
 
 def attach_template_layout_profile(
@@ -953,6 +940,8 @@ def attach_template_layout_profile(
         "best_for",
         "avoid_for",
         "variation_tags",
+        "routing",
+        "evidence_pages",
         "external_image_slots",
         "reuse_friendly",
         "reuse_reason",
@@ -1028,6 +1017,40 @@ def generate_prompt(
         + content_text
         + LANGUAGE_FONT_RULE
     )
+
+
+def compile_runtime_slide_prompt(
+    runtime_profile: Dict[str, Any],
+    matched_layout: Optional[Dict[str, Any]],
+    slide_info: Dict[str, Any],
+    *,
+    external_slots: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """Compile one slide through the only supported layout-fields strategy."""
+    if runtime_profile.get("prompt_strategy") != "layout-fields":
+        raise ValueError(
+            "Unsupported RuntimeProfile prompt strategy: "
+            f"{runtime_profile.get('prompt_strategy')!r}"
+        )
+    if not matched_layout:
+        raise ValueError("RuntimeProfile layout assignment returned no layout")
+
+    try:
+        from .template_analyzer import coerce_fields, render_prompt_from_template
+    except ImportError:
+        from template_analyzer import coerce_fields, render_prompt_from_template
+
+    fields = coerce_fields(slide_info, matched_layout)
+    prompt = render_prompt_from_template(
+        profile=runtime_profile,
+        layout=matched_layout,
+        fields=fields,
+        language_rule=LANGUAGE_FONT_RULE.strip(),
+    )
+    if external_slots:
+        prompt = adapt_template_prompt_for_external_slots(prompt, external_slots)
+        prompt += _format_external_slots_constraint(external_slots)
+    return prompt
 
 
 # =============================================================================
@@ -3387,6 +3410,11 @@ Environment variables:
         help="不生成 .pptx 文件（默认会自动打包成 16:9 PPTX）",
     )
     parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="只通过统一 RuntimeProfile 编译 prompts/metadata，不调用图片生成后端、不打包 PPTX",
+    )
+    parser.add_argument(
         "--editable",
         action="store_true",
         help="生成可编辑对象版 PPTX；需要 PowerPoint/Keynote/LibreOffice 回渲染，默认关闭",
@@ -3477,6 +3505,8 @@ def main() -> None:
         parser.error("--editable-scenes 只能与 --editable 一起使用")
     if args.editable and args.no_pptx:
         parser.error("--editable 与 --no-pptx 不能同时使用")
+    if args.prepare_only and args.editable:
+        parser.error("--prepare-only 与 --editable 不能同时使用")
 
     # ── 命令分发 ────────────────────────────────────────────
     if args.list_sessions:
@@ -3518,7 +3548,7 @@ def main() -> None:
         parser.error("必须传 --style 或 --template-pptx / --template-images / --template-profile 至少其一")
 
     style_template = ""
-    style_layout_profile: Optional[Dict[str, Any]] = None
+    style_runtime_profile: Optional[Dict[str, Any]] = None
     if args.style:
         style_path = args.style
         if not os.path.isabs(style_path):
@@ -3526,18 +3556,24 @@ def main() -> None:
             if candidate.exists():
                 style_path = str(candidate)
         style_template = load_style_template(style_path)
-        style_layout_profile = load_style_layout_profile(style_path, style_template)
+        try:
+            style_runtime_profile = load_style_runtime_profile(style_path, style_template)
+        except ValueError as exc:
+            parser.error(str(exc))
     else:
         style_path = "(template-derived)"
 
-    # 模板模式：跑 vision 拿 TemplateProfile（带缓存）
-    template_profile: Optional[Dict[str, Any]] = None
+    # Every visual source compiles to one RuntimeProfile. Template input has
+    # precedence; a failed template analysis genuinely falls back to --style.
+    runtime_profile: Optional[Dict[str, Any]] = None
     if use_template:
         sys.path.insert(0, str(SCRIPT_DIR))
         if args.template_profile:
             with open(args.template_profile, "r", encoding="utf-8") as f:
-                template_profile = json.load(f)
-            template_profile = _normalize_template_profile_references(template_profile, args.template_profile)
+                raw_template_profile = json.load(f)
+            runtime_profile = _normalize_template_profile_references(
+                raw_template_profile, args.template_profile
+            )
             print(f"📦 使用预分析模板 profile: {args.template_profile}")
         else:
             # 只给了 .pptx 没给 PNG -> 自动渲染到 <cwd>/template_renders/<stem>/
@@ -3547,10 +3583,15 @@ def main() -> None:
                 args.template_images = str(render_pptx_to_pngs(args.template_pptx))
             from template_analyzer import analyze_template
             try:
-                template_profile = analyze_template(
+                raw_template_profile = analyze_template(
                     pptx_path=args.template_pptx,
                     images_dir=args.template_images,
                     rebuild=args.rebuild_template_cache,
+                )
+                runtime_profile = normalize_runtime_profile(
+                    raw_template_profile,
+                    source_kind="template-clone",
+                    profile_path=args.template_pptx or None,
                 )
             except ValueError as e:
                 msg = str(e)
@@ -3559,25 +3600,40 @@ def main() -> None:
                     print("    多模态 agent / 原生 Codex：请先看 template_renders/page-*.png，生成 profile JSON 后用 --template-profile 传入。")
                     print("    纯文本 agent（如 DeepSeek）：请配置 VISION_BASE_URL / VISION_API_KEY / VISION_MODEL_NAME。")
                 raise
-        if not template_profile.get("layouts"):
-            print("(!)  模板分析未产出 layouts（缺 --template-images？），将回退到自由风格 prompt")
-            template_profile = None
-            if not args.style:
+        if not runtime_profile or not runtime_profile.get("layouts"):
+            print("(!)  模板分析未产出 layouts（缺 --template-images？），将回退到结构化 style RuntimeProfile")
+            runtime_profile = select_runtime_profile(None, style_runtime_profile)
+            if not runtime_profile:
                 print("[X] 模板输入不可用且未提供 --style，无法构造有效生成风格。")
                 print("    请提供有效 --template-profile / VISION_*，或额外传 --style 作为 fallback。")
                 sys.exit(1)
+            print(
+                f"↩️  已切换到 style RuntimeProfile: "
+                f"{runtime_profile.get('source')} ({runtime_profile.get('source_kind')})"
+            )
         elif args.template_strict:
             missing_refs = [
                 lay.get("id", f"layout-{i + 1:02d}")
-                for i, lay in enumerate(template_profile.get("layouts", []))
+                for i, lay in enumerate(runtime_profile.get("layouts", []))
                 if not lay.get("reference_image") or not os.path.exists(str(lay.get("reference_image")))
             ]
             if missing_refs:
                 print("(!)  --template-strict 已启用，但部分 layout 没有 reference_image，相关页会退化为纯 prompt 仿作。")
                 print(f"    缺 reference_image 的 layout: {', '.join(missing_refs[:8])}")
-    elif style_layout_profile:
-        template_profile = style_layout_profile
-        print(f"📚 使用内置 style layout bank: {template_profile.get('source')}")
+    else:
+        runtime_profile = select_runtime_profile(None, style_runtime_profile)
+        if runtime_profile and runtime_profile.get("source_kind") == "distilled-style":
+            print(f"📚 使用内置 style layout bank: {runtime_profile.get('source')}")
+        elif runtime_profile:
+            print(f"📚 使用 style RuntimeProfile: {runtime_profile.get('source')}")
+
+    if runtime_profile is None:
+        raise RuntimeError("RuntimeProfile resolution failed")
+
+    strict_reference_mode = bool(
+        args.template_strict
+        and runtime_profile.get("source_kind") == "template-clone"
+    )
 
     with open(args.plan, "r", encoding="utf-8") as f:
         slides_plan = json.load(f)
@@ -3605,10 +3661,14 @@ def main() -> None:
     print("PPT Generator (gpt-image-2) Started")
     print("=" * 60)
     print(f"Style: {style_path}")
-    if template_profile:
-        print(f"Template: {template_profile.get('source')} (hash={template_profile.get('source_hash')}, "
-              f"{len(template_profile.get('layouts', []))} layouts)")
-        print(f"Strict mode: {args.template_strict}")
+    print(
+        f"RuntimeProfile: {runtime_profile.get('source')} "
+        f"(kind={runtime_profile.get('source_kind')}, "
+        f"strategy={runtime_profile.get('prompt_strategy')}, "
+        f"hash={runtime_profile.get('source_hash')}, "
+        f"{len(runtime_profile.get('layouts', []))} layouts)"
+    )
+    print(f"Strict reference mode: {strict_reference_mode}")
     print(f"Slides: {len(slides)} / {total_slides}")
     print(f"Output: {output_dir}")
     print(f"Concurrency: {args.concurrency}")
@@ -3622,8 +3682,13 @@ def main() -> None:
             "total_slides": total_slides,
             "model": os.getenv("GPT_IMAGE_MODEL_NAME", "gpt-image-2"),
             "style": style_path,
-            "template": template_profile.get("source") if template_profile else None,
-            "template_strict": args.template_strict if template_profile else False,
+            "template": (
+                runtime_profile.get("source")
+                if runtime_profile.get("source_kind") == "template-clone"
+                else None
+            ),
+            "template_strict": strict_reference_mode,
+            "runtime_profile": runtime_profile_summary(runtime_profile),
             "generated_at": datetime.now().isoformat(),
         },
         "slides": [],
@@ -3645,6 +3710,7 @@ def main() -> None:
         if new_order:
             metadata["slide_order"] = existing_order + new_order
         metadata["generated_at"] = datetime.now().isoformat()
+        metadata["runtime_profile"] = runtime_profile_summary(runtime_profile)
         print(f"Merging with existing metadata ({len(existing_order)} existing + {len(new_order)} new slides)")
     else:
         metadata = {
@@ -3653,32 +3719,27 @@ def main() -> None:
             "style": style_path,
             "model": os.getenv("GPT_IMAGE_MODEL_NAME", "gpt-image-2"),
             "generated_at": datetime.now().isoformat(),
+            "runtime_profile": runtime_profile_summary(runtime_profile),
             "slide_order": selected_slide_numbers,
             "slides": {},
         }
 
-    if template_profile:
-        from template_analyzer import (
-            match_layout,
-            assign_layouts,
-            coerce_fields,
-            render_prompt_from_template,
-            check_layout_reuse,
-        )
-        # layout 复用检测：在派发任务前打出建议，让用户决定是否中断
-        reuse_warnings = check_layout_reuse(slides, template_profile)
-        if reuse_warnings:
-            print()
-            print("=" * 60)
-            print("📐 Layout 复用检测（建议尽量做到 1 page : 1 layout）")
-            print("=" * 60)
-            for w in reuse_warnings:
-                print(w)
-            print("=" * 60)
-            print()
-        assigned_layouts = assign_layouts(slides, template_profile)
-    else:
-        assigned_layouts = {}
+    from template_analyzer import (
+        match_layout,
+        assign_layouts,
+        check_layout_reuse,
+    )
+    reuse_warnings = check_layout_reuse(slides, runtime_profile)
+    if reuse_warnings:
+        print()
+        print("=" * 60)
+        print("📐 Layout 复用检测（建议尽量做到 1 page : 1 layout）")
+        print("=" * 60)
+        for w in reuse_warnings:
+            print(w)
+        print("=" * 60)
+        print()
+    assigned_layouts = assign_layouts(slides, runtime_profile)
 
     # 收集所有待跑任务（跳过已存在的）
     pending_tasks = []
@@ -3687,11 +3748,10 @@ def main() -> None:
         page_type = slide_info.get("page_type", "content")
         content_text = slide_info.get("content", "")
         raw_slide_spec = slide_info.get("slide_spec")
-        matched_layout = None
-        matched_layout_id = None
-        if template_profile:
-            matched_layout = assigned_layouts.get(slide_number) or match_layout(slide_info, template_profile)
-            matched_layout_id = matched_layout.get("id") if matched_layout else None
+        matched_layout = assigned_layouts.get(slide_number) or match_layout(
+            slide_info, runtime_profile
+        )
+        matched_layout_id = matched_layout.get("id") if matched_layout else None
         if matched_layout:
             raw_slide_spec = attach_template_layout_profile(raw_slide_spec, matched_layout)
         slide_spec = prepare_external_image_slots(raw_slide_spec, output_dir)
@@ -3699,7 +3759,7 @@ def main() -> None:
         generation_reference_images = _collect_generation_reference_images(slide_spec, output_dir)
 
         existing = os.path.join(output_dir, "images", f"slide-{slide_number:02d}.png")
-        if os.path.exists(existing):
+        if os.path.exists(existing) and not args.prepare_only:
             print(f"Slide {slide_number}: already exists, skipping.")
             prompts_data["slides"].append({
                 "slide_number": slide_number,
@@ -3718,34 +3778,14 @@ def main() -> None:
             continue
 
         reference_image = None
-        if template_profile:
-            if matched_layout is None:
-                # 模板未匹配 -> 回退到 style_template
-                prompt = generate_prompt(
-                    style_template, page_type, content_text, slide_number, total_slides,
-                    slide_spec=slide_spec,
-                    output_dir=output_dir,
-                )
-            else:
-                fields = coerce_fields(slide_info, matched_layout)
-                prompt = render_prompt_from_template(
-                    profile=template_profile,
-                    layout=matched_layout,
-                    fields=fields,
-                    language_rule=LANGUAGE_FONT_RULE.strip(),
-                )
-                if external_slots:
-                    prompt = adapt_template_prompt_for_external_slots(prompt, external_slots)
-                    prompt += _format_external_slots_constraint(external_slots)
-                if args.template_strict:
-                    reference_image = matched_layout.get("reference_image")
-        else:
-            prompt = generate_prompt(
-                style_template, page_type, content_text, slide_number, total_slides,
-                slide_spec=slide_spec,
-                output_dir=output_dir,
-            )
-            matched_layout_id = None
+        prompt = compile_runtime_slide_prompt(
+            runtime_profile,
+            matched_layout,
+            slide_info,
+            external_slots=external_slots,
+        )
+        if strict_reference_mode and matched_layout:
+            reference_image = matched_layout.get("reference_image")
 
         if generation_reference_images:
             prompt += _format_generation_reference_constraint(generation_reference_images)
@@ -3776,36 +3816,38 @@ def main() -> None:
         })
 
     if pending_tasks:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        worker_count = max(1, min(args.concurrency, len(pending_tasks)))
-        print(f"📦 派发 {len(pending_tasks)} 个任务到 {worker_count} 个并发 worker...\n")
-
         results: Dict[int, Optional[str]] = {}
+        if args.prepare_only:
+            print(f"🧭 已通过统一 RuntimeProfile 编译 {len(pending_tasks)} 页；跳过图片生成。\n")
+        else:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        def _run(task):
-            n = task["slide_number"]
-            print(f">️  [slide {n}] start ({task['page_type']}{' / ref' if task.get('reference_image') else ''})")
-            try:
-                path = generate_slide(
-                    task["prompt"], n, output_dir,
-                    reference_image_path=task.get("reference_image"),
-                    backend=args.backend,
-                )
-                if not path:
-                    raise RuntimeError("generator returned empty image path")
-                sanitize_external_image_regions(output_dir, n, task.get("slide_spec"))
-                print(f"[OK] [slide {n}] done")
-                return n, path
-            except Exception as e:
-                print(f"[X] [slide {n}] failed: {e}")
-                return n, None
+            worker_count = max(1, min(args.concurrency, len(pending_tasks)))
+            print(f"📦 派发 {len(pending_tasks)} 个任务到 {worker_count} 个并发 worker...\n")
 
-        with ThreadPoolExecutor(max_workers=worker_count) as executor:
-            futures = [executor.submit(_run, t) for t in pending_tasks]
-            for fut in as_completed(futures):
-                n, path = fut.result()
-                results[n] = path
+            def _run(task):
+                n = task["slide_number"]
+                print(f">️  [slide {n}] start ({task['page_type']}{' / ref' if task.get('reference_image') else ''})")
+                try:
+                    path = generate_slide(
+                        task["prompt"], n, output_dir,
+                        reference_image_path=task.get("reference_image"),
+                        backend=args.backend,
+                    )
+                    if not path:
+                        raise RuntimeError("generator returned empty image path")
+                    sanitize_external_image_regions(output_dir, n, task.get("slide_spec"))
+                    print(f"[OK] [slide {n}] done")
+                    return n, path
+                except Exception as e:
+                    print(f"[X] [slide {n}] failed: {e}")
+                    return n, None
+
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                futures = [executor.submit(_run, t) for t in pending_tasks]
+                for fut in as_completed(futures):
+                    n, path = fut.result()
+                    results[n] = path
 
         # 按原顺序写回 prompts_data，同时填充 metadata
         for task in pending_tasks:
@@ -3822,25 +3864,29 @@ def main() -> None:
                 "prompt": task["prompt"],
                 "image_path": image_path,
                 "slide_spec": task.get("slide_spec"),
+                "prepared_only": args.prepare_only,
             })
 
             # metadata.json: save slide_spec + version history
             spec = task.get("slide_spec") or {}
             prompt_rel = f"images/slide-{n:02d}_v0001.txt"
             img_rel = f"images/slide-{n:02d}_v0001.png"
+            prompt_abs = os.path.join(output_dir, prompt_rel)
+            os.makedirs(os.path.dirname(prompt_abs), exist_ok=True)
+            with open(prompt_abs, "w", encoding="utf-8") as pf:
+                pf.write(task["prompt"])
 
             if image_path:
                 import shutil as _shutil
-                # Save prompt text for version history
-                prompt_abs = os.path.join(output_dir, prompt_rel)
-                os.makedirs(os.path.dirname(prompt_abs), exist_ok=True)
-                with open(prompt_abs, "w", encoding="utf-8") as pf:
-                    pf.write(task["prompt"])
                 versioned_initial = os.path.join(output_dir, img_rel)
                 _shutil.copy2(image_path, versioned_initial)
 
                 metadata["slides"][str(n)] = _init_slide_metadata(
                     n, task["page_type"], spec, prompt_rel, img_rel
+                )
+            elif args.prepare_only:
+                metadata["slides"][str(n)] = _init_slide_metadata(
+                    n, task["page_type"], spec, prompt_rel, ""
                 )
             # For failed slides, still record the spec but no image
             elif spec:
@@ -3852,10 +3898,16 @@ def main() -> None:
     prompts_data["slides"].sort(key=lambda s: s["slide_number"])
     print()
 
-    # Save both legacy prompts.json and new metadata.json
+    # Save compiled prompts and structured metadata from the same RuntimeProfile.
     prompts_data = _merge_prompts_data(existing_prompts_data, prompts_data)
     save_prompts(output_dir, prompts_data)
     _save_metadata(metadata, output_dir)
+
+    if args.prepare_only:
+        print("[OK] Prompt preparation complete (no image API calls were made).")
+        print(f"Prompts: {os.path.join(output_dir, 'prompts.json')}")
+        print(f"Metadata: {os.path.join(output_dir, METADATA_FILENAME)}")
+        return
 
     failed_slides = sorted(
         slide["slide_number"]

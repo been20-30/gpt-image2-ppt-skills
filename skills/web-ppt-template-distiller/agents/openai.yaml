@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web PPT Template Distiller"
+  short_description: "Distill and validate reusable PPT template systems"
+  default_prompt: "Use $web-ppt-template-distiller to score this PPT template, distill its design system, and run closed-loop validation."

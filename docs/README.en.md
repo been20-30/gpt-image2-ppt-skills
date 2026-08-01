@@ -104,6 +104,7 @@ The assistant organizes the content, confirms one visual sample, generates the f
 ## ✨ What it does
 
 - 🎨 **Online template gallery** — browse all currently collected templates, search or filter by use case and style, then copy a template prompt directly into your AI assistant
+- 🧬 **Template quality validation** — render cover, section, content, and data slides to check full-deck consistency, readability, and layout quality before a template is published
 - 🧭 **Prompt Recipes** — `examples/` provides starter `slides_plan.md` templates for common scenarios such as product launches, investor pitches, weekly reports, courseware, thesis defenses, and book talks
 - 🪄 **Template-clone mode** — drop in any `.pptx`; the agent follows its layout, palette, and illustration language, then swaps in your new content
 - 🎯 **Precise natural-language edits** — say "change slide 3's subtitle", "remove the footer", or "replace these three metrics"; the agent regenerates only the target slide through image-to-image editing while trying to preserve the original style and layout
@@ -137,6 +138,10 @@ Open any template to preview the full slide set and copy either its template ID 
 [![SlideCraft Template Gallery template detail — preview slides and copy the prompt](assets/template-gallery-detail-en.jpg)](https://slidecraft-template-gallery.vercel.app/templates/abstract-art-showcase)
 
 > Click either image to open the corresponding page. New templates are added continuously, so this README no longer maintains a complete list that can quickly become outdated.
+
+The gallery is evaluated as complete presentations rather than isolated cover images. New templates are tested across cover, section, content, and data slides and compared with the existing version. A published template is updated only when overall quality improves without a noticeable regression on key slides.
+
+No knowledge of the internal implementation is required. Copy a prompt from the gallery or upload your own `.pptx` as a reference template. Existing published templates are not overwritten by unverified candidates.
 
 ---
 
@@ -231,6 +236,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🆕 Changelog
 
+- **2026-08-01 · Template cloning and distillation upgrade** — Unified template reuse and added multi-slide visual checks, old/new comparisons, and failure protection. All 22 historical templates now support the new workflow and will replace published versions only after a confirmed visual improvement.
 - **2026-07-29 · Online template gallery** — Current templates now live in SlideCraft Template Gallery, with search, filters, real output previews, and copy-ready prompts for AI assistants.
 - **2026-07-13 · Editable render-back and iteration policy** — `--editable` now requires a working PowerPoint, Keynote, or LibreOffice renderer, automatically emits `editable_renders/page-XX.png` for multimodal review, and uses a quality-first escalation policy with repeated low-cost checks and targeted repairs before any full-slide regeneration.
 - **2026-07-11 · Editable mode** — Explicit editable-delivery requests can reconstruct complete visual masters as native text, shapes, connectors, and independent image layers. Overlapping assets follow the A1 original-pixel extraction → A2 occlusion completion → B AI separation/regeneration route. Default behavior is unchanged.
@@ -241,8 +247,14 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🙏 Acknowledgements
 
-- [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — reference for the original style prompts and early skill structure. This project swaps the image backend from Nano Banana Pro to OpenAI gpt-image-2, rewrites the 3 inherited styles and adds 7 new ones (10 total), and layers on template-clone mode (vision-based style extraction from any user `.pptx`), an md-first authoring flow, automatic `.pptx` packaging, and a codex CLI fallback backend.
+- [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — upstream reference for the original style prompts and early Skill structure. This project initially replaced Nano Banana Pro with OpenAI gpt-image-2, rewrote three inherited styles, added seven more, and later expanded into template cloning, md-first authoring, PPTX packaging, and a structured style library.
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — reference for the Claude Code skill `SKILL.md` frontmatter.
+- [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — reference for template reuse and editable presentations.
+- [ningzimu/image-to-editable-ppt-skill](https://github.com/ningzimu/image-to-editable-ppt-skill) — reference for image-to-editable-PPT workflows and visual review.
+- [kdnsna/ultimate-ppt-master-skill](https://github.com/kdnsna/ultimate-ppt-master-skill) — reference for presentation planning, delivery, and review workflows.
+- [gnuhpc/ppt-master-plus](https://github.com/gnuhpc/ppt-master-plus) — reference for template preservation and staged quality checks.
+
+Apart from the early NanoBanana-PPT-Skills upstream relationship and the html-ppt-skill formatting reference, these projects were used for public workflow comparison. No source code, templates, or visual assets were copied from them.
 
 ## 💬 Community
 

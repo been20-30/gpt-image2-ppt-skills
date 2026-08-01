@@ -107,6 +107,7 @@ AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图�
 ## ✨ 能做什么
 
 - 🎨 **在线模板画廊** — 集中展示目前收录的模板，可按场景和风格搜索、筛选，复制喜欢的模板 Prompt 后直接交给 AI 使用
+- 🧬 **模板质量验证** — 候选模板会实际生成封面、章节、内容和数据页，检查整套一致性、可读性和布局效果后再入库
 - 🧭 **Prompt Recipes 示例库** — `examples/` 提供产品发布、融资路演、周报、课程课件、论文答辩、读书分享等常见场景的 `slides_plan.md` 起步模板
 - 🪄 **模板克隆模式** — 丢一个 `.pptx` 进去，AI 会参考原模板的版式、配色和插画语汇，像上面那张图一样换成新内容
 - 🎯 **自然语言精准编辑** — 直接说“改第 3 页副标题”“删掉页脚”“把三个数据换成新数字”，AI 会通过图生图只重生成目标页，尽量保持原风格和版式不变
@@ -139,6 +140,10 @@ AI 会整理内容、先做单页视觉确认、再生成完整 PPT，并把图�
 [![SlideCraft Template Gallery 模板详情页：逐页预览并复制 Prompt](docs/assets/template-gallery-detail.jpg)](https://slidecraft-template-gallery.vercel.app/templates/abstract-art-showcase)
 
 > 点击图片进入对应页面。模板会持续补充，README 不再维护容易过时的完整模板清单。
+
+模板库不只看单张封面：新模板会用封面、章节、内容和数据等多类页面验证整套效果，并与现有版本对照。只有整体质量更好且关键页面没有明显退步时才会更新正式模板。
+
+使用时无需了解内部实现：可以直接从画廊复制喜欢的 Prompt，也可以上传自己的 `.pptx` 作为参考模板。已有正式模板不会因为新候选尚未验证就被覆盖。
 
 ---
 
@@ -232,6 +237,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🆕 更新记录
 
+- **2026-08-01 · 模板克隆与蒸馏升级**：统一模板复用流程，增加多页面效果验证、新旧版对照和失败保护；22 套历史模板已适配新流程，只有确认效果提升后才会替换正式版本。
 - **2026-07-29 · 在线模板画廊**：目前收录的模板改为通过 SlideCraft Template Gallery 统一展示，支持搜索、筛选、查看真实效果和复制 Prompt 给 AI 使用。
 - **2026-07-13 · 可编辑回渲染与轮次策略**：`--editable` 现在像模板克隆一样强制检查 PowerPoint / Keynote / LibreOffice，完成后自动输出 `editable_renders/page-XX.png` 供多模态验收；工作流改为效果优先、低成本检查可多轮、生成修复逐级升级并优先局部处理。
 - **2026-07-11 · 可编辑模式**：用户明确要求可编辑交付时，完整视觉稿生成后可重建为原生文本、shape、connector 和独立图片层；重叠素材按 A1 原像素提取 → A2 遮挡补全 → B AI 分离/重生成路由处理。默认模式不受影响。
@@ -242,8 +248,14 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🙏 致谢
 
-- [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — 风格 prompts 与早期 skill 结构参考。本项目把图片后端从 Nano Banana Pro 换成了 OpenAI gpt-image-2，重写了继承自上游的 3 套风格并新增 7 套（共 10 套），另加入模板克隆模式（vision 抽风格仿任意 `.pptx`）、md-first 编排流程、`.pptx` 自动打包、codex CLI 备用后端等新功能。
+- [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — 风格 prompts 与早期 Skill 结构的上游参考。本项目最初把图片后端从 Nano Banana Pro 换成 OpenAI gpt-image-2，重写 3 套继承风格并新增 7 套，后续再扩展模板克隆、md-first 编排、PPTX 打包和结构化风格库。
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — Claude Code skill SKILL.md frontmatter 写法参考。
+- [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — 模板复用与可编辑幻灯片思路参考。
+- [ningzimu/image-to-editable-ppt-skill](https://github.com/ningzimu/image-to-editable-ppt-skill) — 图片转可编辑 PPT 与效果检查思路参考。
+- [kdnsna/ultimate-ppt-master-skill](https://github.com/kdnsna/ultimate-ppt-master-skill) — PPT 内容组织、交付与审阅流程参考。
+- [gnuhpc/ppt-master-plus](https://github.com/gnuhpc/ppt-master-plus) — 模板保留与分阶段质量检查思路参考。
+
+除 NanoBanana-PPT-Skills 的早期上游关系和 html-ppt-skill 的格式参考外，上述项目主要用于公开方案对比。本项目没有复制其代码、模板或视觉素材。
 
 ## 💬 Community
 

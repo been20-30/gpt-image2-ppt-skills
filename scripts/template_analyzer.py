@@ -536,6 +536,132 @@ def match_layout(slide: Dict[str, Any], profile: Dict[str, Any]) -> Optional[Dic
     return layouts[idx]
 
 
+def _routing_content_text(slide: Dict[str, Any]) -> str:
+    content = slide.get("content", "")
+    if isinstance(content, str):
+        return content
+    try:
+        return json.dumps(content, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return str(content)
+
+
+def _routing_features(slide: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract conservative content-shape hints for opt-in distilled layouts."""
+    text = _routing_content_text(slide)
+    lowered = text.lower()
+    metric_count = len(re.findall(r"[-+]?\d+(?:\.\d+)?\s*%", text))
+    quarter_count = len(set(re.findall(r"\bq[1-4]\b", lowered)))
+    year_count = len(set(re.findall(r"\b(?:19|20)\d{2}\b", text)))
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    bullet_count = sum(
+        1 for line in lines if re.match(r"^(?:[-*•]|\d+[.)、])\s*", line)
+    )
+    item_count = max(metric_count, bullet_count, max(0, len(lines) - 1))
+    shapes: set[str] = set()
+    if metric_count:
+        shapes.add("metrics")
+    if metric_count >= 2 and quarter_count >= 2:
+        shapes.update({"metrics-series", "metrics+series"})
+    if year_count >= 2 or any(token in lowered for token in ("timeline", "时间线", "里程碑")):
+        shapes.add("timeline")
+    if any(token in lowered for token in ("before", "after", "versus", " vs ", "对比", "之前", "之后")):
+        shapes.add("comparison")
+    if any(token in lowered for token in ("step", "phase", "阶段", "步骤", "流程")):
+        shapes.add("process")
+    if "|" in text or any(token in lowered for token in ("table", "表格", "矩阵")):
+        shapes.add("table")
+    if bullet_count >= 2 or len(lines) >= 4:
+        shapes.add("list")
+    if not shapes:
+        shapes.add("general")
+    return {
+        "text": lowered,
+        "shapes": shapes,
+        "metric_count": metric_count,
+        "series_count": max(quarter_count, year_count),
+        "item_count": item_count,
+    }
+
+
+def _routing_shape_aliases(values: set[str]) -> set[str]:
+    """Normalize model-authored shape synonyms into stable routing families."""
+    expanded: set[str] = set()
+    for value in values:
+        token = re.sub(r"[^a-z0-9]+", "-", str(value).strip().lower()).strip("-")
+        if not token:
+            continue
+        expanded.add(token)
+        if any(part in token for part in ("metric", "kpi", "chart", "series", "trend")):
+            expanded.add("metrics")
+        if any(part in token for part in ("table", "tabular", "matrix")):
+            expanded.add("table")
+        if any(part in token for part in ("timeline", "milestone", "roadmap", "chronolog")):
+            expanded.add("timeline")
+        if any(part in token for part in ("compar", "versus")):
+            expanded.add("comparison")
+        if any(part in token for part in ("process", "workflow", "step", "phase")):
+            expanded.add("process")
+        if any(part in token for part in ("list", "bullet")):
+            expanded.add("list")
+    return expanded
+
+
+def layout_routing_score(slide: Dict[str, Any], layout: Dict[str, Any]) -> float:
+    """Score explicit routing metadata; layouts without routing remain order-driven."""
+    routing = layout.get("routing")
+    if not isinstance(routing, dict) or not routing:
+        return 0.0
+    features = _routing_features(slide)
+    shapes = _routing_shape_aliases(set(features["shapes"]))
+    score = 1.0
+    content_shapes = routing.get("content_shapes")
+    if isinstance(content_shapes, str):
+        content_shapes = [content_shapes]
+    if isinstance(content_shapes, list) and content_shapes:
+        wanted = _routing_shape_aliases(
+            {str(item).strip().lower() for item in content_shapes if str(item).strip()}
+        )
+        score += 30.0 if shapes & wanted else -15.0
+    for field, delta_present, delta_missing in (
+        ("requires", 10.0, -25.0),
+        ("excludes", -30.0, 0.0),
+    ):
+        values = routing.get(field)
+        if isinstance(values, str):
+            values = [values]
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            token = str(value).strip().lower()
+            if not token:
+                continue
+            present = bool(_routing_shape_aliases({token}) & shapes) or token in features["text"]
+            score += delta_present if present else delta_missing
+    for feature_name, min_key, max_key in (
+        ("item_count", "min_items", "max_items"),
+        ("metric_count", "min_metrics", "max_metrics"),
+        ("series_count", "min_series", "max_series"),
+    ):
+        value = int(features[feature_name])
+        minimum = routing.get(min_key)
+        maximum = routing.get(max_key)
+        if isinstance(minimum, (int, float)):
+            score += 4.0 if value >= minimum else -12.0
+        if isinstance(maximum, (int, float)):
+            score += 4.0 if value <= maximum else -12.0
+    for key, delta in (("keywords", 3.0), ("exclude_keywords", -20.0)):
+        values = routing.get(key)
+        if isinstance(values, str):
+            values = [values]
+        if isinstance(values, list):
+            for value in values:
+                token = str(value).strip().lower()
+                if token and token in features["text"]:
+                    score += delta
+    return score
+
+
 def assign_layouts(slides: List[Dict[str, Any]], profile: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
     """Assign template layouts to slides while preferring one layout per page.
 
@@ -593,11 +719,23 @@ def assign_layouts(slides: List[Dict[str, Any]], profile: Dict[str, Any]) -> Dic
         page_type = slide.get("page_type", "content")
         chosen = None
 
-        idx = max(0, min(slide_number - 1, len(layouts) - 1))
-        indexed = layouts[idx]
-        indexed_id = layout_id_of(indexed, idx)
-        if indexed.get("page_type") == page_type and indexed_id not in used_ids:
-            chosen = indexed
+        unused_same_type = [
+            lay
+            for i, lay in enumerate(layouts)
+            if lay.get("page_type") == page_type and layout_id_of(lay, i) not in used_ids
+        ]
+        if any(isinstance(lay.get("routing"), dict) and lay.get("routing") for lay in unused_same_type):
+            chosen = max(
+                unused_same_type,
+                key=lambda lay: layout_routing_score(slide, lay),
+            )
+
+        if chosen is None:
+            idx = max(0, min(slide_number - 1, len(layouts) - 1))
+            indexed = layouts[idx]
+            indexed_id = layout_id_of(indexed, idx)
+            if indexed.get("page_type") == page_type and indexed_id not in used_ids:
+                chosen = indexed
 
         if chosen is None:
             for i, lay in enumerate(layouts):
@@ -608,8 +746,11 @@ def assign_layouts(slides: List[Dict[str, Any]], profile: Dict[str, Any]) -> Dic
 
         same_type = [lay for lay in layouts if lay.get("page_type") == page_type]
         if chosen is None and same_type:
-            for lay in same_type:
-                if lay.get("reuse_friendly", True):
+            reusable = [lay for lay in same_type if lay.get("reuse_friendly", True)]
+            if any(isinstance(lay.get("routing"), dict) and lay.get("routing") for lay in reusable):
+                chosen = max(reusable, key=lambda lay: layout_routing_score(slide, lay))
+            else:
+                for lay in reusable:
                     chosen = lay
                     break
             if chosen is None:

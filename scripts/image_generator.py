@@ -36,6 +36,7 @@ MAX_RETRIES = 3  # 524/超时/连接断开等瞬态错误的重试次数
 RETRY_DELAY_SECS = 5
 MAX_ASPECT_RETRIES = 2  # 比例不合格自动重生次数
 ASPECT_TOLERANCE = 0.15  # 比例偏差容忍度（±15%）
+HTTP_USER_AGENT = "gpt-image2-ppt/1.0"
 
 # 期望的宽高比（width / height）
 ASPECT_RATIO_VALUES = {
@@ -43,6 +44,21 @@ ASPECT_RATIO_VALUES = {
     "9:16": 9 / 16,
     "1:1": 1.0,
 }
+
+
+class TransientImageGenerationError(RuntimeError):
+    """The Images API was reached, but its upstream generator is temporarily unavailable."""
+
+
+def openai_compatible_endpoint(base_url: str, path: str) -> str:
+    """Join an OpenAI-compatible base URL without duplicating the /v1 prefix."""
+    base = base_url.rstrip("/")
+    suffix = "/" + path.strip("/")
+    if suffix.startswith("/v1/"):
+        suffix = suffix[3:]
+    if base.endswith("/v1"):
+        return f"{base}{suffix}"
+    return f"{base}/v1{suffix}"
 
 
 def read_png_dimensions(path: str) -> tuple:
@@ -214,7 +230,7 @@ class GptImage2Generator:
         reference_image_path 不为空时，把参考图片作为多模态 input 一并塞进 messages，
         让 gpt-image-2 按它的视觉风格出新图（高保真 / 模板克隆模式）。
         """
-        url = f"{self.base_url}/v1/chat/completions"
+        url = openai_compatible_endpoint(self.base_url, "chat/completions")
         # 用比例描述而不是具体像素 ---- gpt-image 类模型更听自然语言 "宽屏 16:9"，
         # 写具体像素值反而被忽略。
         if self.aspect_ratio == "9:16":
@@ -323,6 +339,7 @@ class GptImage2Generator:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
+            "User-Agent": HTTP_USER_AGENT,
         }
         print(f"🔗 POST {url}  size={size}  stream=True")
         resp = requests.post(
@@ -370,7 +387,7 @@ class GptImage2Generator:
     # ---------- 端点 2: /v1/images/generations ----------
 
     def _request_via_images(self, prompt: str, size: str) -> str:
-        url = f"{self.base_url}/v1/images/generations"
+        url = openai_compatible_endpoint(self.base_url, "images/generations")
         payload = {
             "model": self.model_name,
             "prompt": prompt,
@@ -381,6 +398,7 @@ class GptImage2Generator:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            "User-Agent": HTTP_USER_AGENT,
         }
         print(f"🔗 POST {url}  size={size}  quality={self.quality}")
         resp = requests.post(url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT_SECS)
@@ -392,6 +410,29 @@ class GptImage2Generator:
             )
 
         result = resp.json()
+        error = result.get("error") if isinstance(result, dict) else None
+        if error:
+            if isinstance(error, dict):
+                error_type = str(error.get("type") or result.get("type") or "unknown")
+                error_message = str(error.get("message") or error)
+            else:
+                error_type = str(result.get("type") or "unknown")
+                error_message = str(error)
+            detail = (
+                f"images 调用失败 (status=200, type={error_type}): "
+                f"{error_message[:300]}"
+            )
+            normalized = f"{error_type} {error_message}".lower()
+            if any(marker in normalized for marker in (
+                "internal_error",
+                "server_error",
+                "service unavailable",
+                "temporarily unavailable",
+                "upstream timeout",
+            )):
+                raise TransientImageGenerationError(detail)
+            raise RuntimeError(detail)
+
         data = result.get("data") or []
         if not data:
             raise RuntimeError(f"响应没有 data: {str(result)[:300]}")
@@ -447,6 +488,22 @@ class GptImage2Generator:
                                 payload = self._request_via_chat(prompt, target_size, reference_image_path)
                             else:
                                 payload = self._request_via_images(prompt, target_size)
+                        except TransientImageGenerationError as e:
+                            # Some OpenAI-compatible relays return HTTP 200 with an
+                            # embedded internal_error while their image worker is in
+                            # maintenance. Retrying Images first preserves the exact
+                            # API contract and avoids an immediate, usually invalid,
+                            # switch to chat/completions. On the last attempt, retain
+                            # the historical auto-mode chat fallback.
+                            if attempt < MAX_RETRIES:
+                                raise
+                            print(
+                                "(!) images 连续瞬态失败，最后尝试回退到 chat: "
+                                f"{str(e)[:120]}"
+                            )
+                            payload = self._request_via_chat(
+                                prompt, target_size, reference_image_path
+                            )
                         except Exception as e:
                             print(f"(!) images 失败，回退到 chat: {str(e)[:120]}")
                             payload = self._request_via_chat(prompt, target_size, reference_image_path)
@@ -456,8 +513,21 @@ class GptImage2Generator:
                 except Exception as e:
                     last_err = e
                     msg = str(e)[:200]
-                    transient = any(s in msg for s in ("524", "502", "503", "504", "timeout", "Read timed out",
-                                                        "Connection aborted", "RemoteDisconnected"))
+                    transient = isinstance(e, TransientImageGenerationError) or any(
+                        s in msg.lower()
+                        for s in (
+                            "524",
+                            "502",
+                            "503",
+                            "504",
+                            "timeout",
+                            "read timed out",
+                            "connection aborted",
+                            "remotedisconnected",
+                            "service unavailable",
+                            "temporarily unavailable",
+                        )
+                    )
                     if attempt < MAX_RETRIES and transient:
                         print(f"(!) [scene {scene_index}] 第 {attempt} 次失败({msg})，{RETRY_DELAY_SECS}s 后重试")
                         _time.sleep(RETRY_DELAY_SECS)
