@@ -1,7 +1,7 @@
 ---
 title: FlowLedger 种子轮融资路演
 scenario: investor-pitch
-recommended_style: clean-tech-blue
+recommended_style: styles/initial/clean-tech-blue.md
 ---
 
 ## 1. [cover] FlowLedger

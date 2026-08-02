@@ -31,7 +31,7 @@ generate_ppt.py
 ```text
 slides_plan.md ── md_to_plan.py ──→ slides_plan.json (+ optional slide_spec)
                                              │
-styles/<id>.md + styles/<id>.layouts.json ───┤
+styles/<collection>/<id>.md + .layouts.json ┤
                                              ▼
                                   style RuntimeProfile adapter
                                              │
@@ -47,7 +47,7 @@ styles/<id>.md + styles/<id>.layouts.json ───┤
           prompts.json + metadata.json                 gpt-image-2 → PNG → PPTX
 ```
 
-内置风格只接受配对格式：`styles/<id>.md` 存人读风格说明，`styles/<id>.layouts.json` 存机器读 layout bank。缺少 sidecar 会在图片 API 调用前直接失败，不再回退到 Markdown-only prompt。JSON sidecar 与 TemplateProfile 兼容，但通常不含 `reference_image`，因此只提供页面形态、容量和适用场景，不做像素级模板页参考。
+内置风格只接受配对格式：`styles/<collection>/<id>.md` 存人读风格说明，同目录的 `<id>.layouts.json` 存机器读 layout bank。缺少 sidecar 会在图片 API 调用前直接失败，不再回退到 Markdown-only prompt。JSON sidecar 与 TemplateProfile 兼容，但通常不含 `reference_image`，因此只提供页面形态、容量和适用场景，不做像素级模板页参考。
 
 ### 2.2 模板克隆 (`--template-pptx`)
 
@@ -286,7 +286,7 @@ outputs/20240523_143052/        ← 新增 slide-02, slide-04
 {
   "version": 1,
   "title": "MediWise 商业计划书",
-  "style": "styles/dark-aurora.md",
+  "style": "styles/initial/dark-aurora.md",
   "generated_at": "2024-05-23T14:30:52",
   "slide_order": [1, 2, 3],
   "slides": {
@@ -369,7 +369,7 @@ outputs/<timestamp>/
 
 | 命令 | 作用 |
 |------|------|
-| `python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/xx.md` | 生成（内置风格） |
+| `python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/<collection>/xx.md` | 生成（内置风格） |
 | `python3 scripts/generate_ppt.py --plan slides_plan.json --template-pptx xx.pptx --template-strict` | 生成（模板克隆） |
 | `python3 scripts/generate_ppt.py --plan slides_plan.json --style xx.md --slides 1,3 --output path/existing` | 生成指定页，合并到已有 session |
 | `python3 scripts/generate_ppt.py --edit 3 --session <ts> --element-updates '{"subtitle":{"content":"新"}}'` | 修改第 3 页 |

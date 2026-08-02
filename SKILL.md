@@ -1,6 +1,6 @@
 ---
 name: gpt-image2-ppt
-description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- use any style in styles/STYLE_ID.md or mimic a user-supplied .pptx template; outputs high-res slide PNGs and a 16:9 .pptx. Use when the user asks to make a presentation, slides, deck, pitch deck, investor PPT, magazine-style PPT, or 做一份 PPT / 生成幻灯片 / 用 gpt-image 生成 PPT / 按这个模板生成 PPT.
+description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- use any style in styles/<collection>/STYLE_ID.md or mimic a user-supplied .pptx template; outputs high-res slide PNGs and a 16:9 .pptx. Use when the user asks to make a presentation, slides, deck, pitch deck, investor PPT, magazine-style PPT, or 做一份 PPT / 生成幻灯片 / 用 gpt-image 生成 PPT / 按这个模板生成 PPT.
 ---
 
 # gpt-image2-ppt -- 用 gpt-image-2 生成 PPT
@@ -44,7 +44,7 @@ description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- u
 | `economic-impact-of-coronavirus` | 经济影响报告风、严肃信息图、冷静色彩和数据叙事 | 宏观经济、政策分析、风险报告 |
 | `eco-green-business-plan` | 鼠尾草绿、自然材质摄影、环保商务与极简分屏 | 可持续商业、环保品牌、健康生活方式 |
 
-所有可用风格都统一放在 `styles/` 下，使用方式完全相同。需要查看风格封面展示时，读取 `docs/distilled-styles.md`。
+所有可用风格都统一放在 `styles/` 下并按来源分组，使用方式完全相同：`initial/` 收录初始 10 套，`featured/` 收录精选 22 套，`xiamulingzi/` 收录网友 @夏目玲子 提供的 233 套。目录索引见 `styles/README.md`；精选风格封面展示见 `docs/distilled-styles.md`。
 
 > 风格选择原则：先根据内容场景在 `styles/` 里选择最贴近的一套。技术类可优先看 `dark-aurora` / `gradient-glass` / `data-science-consulting`，商务类可优先看 `clean-tech-blue` / `editorial-mono` / `eco-green-business-plan` / `investment-company-business-plan`，文化生活类可优先看 `japanese-wabi` / `vector-illustration` / `culinary-innovation` / `flowery`，学术类可优先看 `swiss-grid` / `geometric-duotone-thesis` / `final-year-project-thesis-defense`，工作坊与培训类可优先看 `hand-sketch` / `mind-maps-workshop-professional` / `mindfulness-in-the-classroom-breathing-techniques`。
 
@@ -83,13 +83,13 @@ description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- u
 内置风格采用“MD 给人看，JSON 给机器用”的双文件结构：
 
 ```text
-styles/<style-id>.md            # 风格说明、设计令牌、基础提示词
-styles/<style-id>.layouts.json  # 必需；每页 layout bank，供自动分配页面形态
+styles/<collection>/<style-id>.md            # 风格说明、设计令牌、基础提示词
+styles/<collection>/<style-id>.layouts.json  # 必需；每页 layout bank，供自动分配页面形态
 ```
 
 `generate_ppt.py` 会把同名 `.layouts.json` 作为无 reference image 的 RuntimeProfile 使用：通过 `assign_layouts()` 分配不同 layout，把 `visual_signature` / `content_capacity` / `best_for` / `avoid_for` / `variation_tags` 写入 prompt，并把命中的 layout 精简信息写入 `metadata.json`。
 
-当前所有内置 `styles/*.md` 都必须配套同名 `.layouts.json`。只有 Markdown、缺少 sidecar 的旧风格会在出图前直接报错，不再静默走旧 Prompt；先把它迁移为配对格式。以后蒸馏公开模板或新增内置风格时，必须同时产出 JSON sidecar；不要把多页 layout 只压缩进单个 MD 的“布局系统”文字段落。
+当前所有 `styles/**/*.md` 都必须配套同目录、同名的 `.layouts.json`。只有 Markdown、缺少 sidecar 的旧风格会在出图前直接报错，不再静默走旧 Prompt；先把它迁移为配对格式。以后蒸馏公开模板或新增内置风格时，必须同时产出 JSON sidecar；不要把多页 layout 只压缩进单个 MD 的“布局系统”文字段落。
 
 ### 统一 RuntimeProfile 运行内核
 
@@ -99,44 +99,6 @@ styles/<style-id>.layouts.json  # 必需；每页 layout bank，供自动分配�
 - `distilled-style`：来自 `<style>.md` + `<style>.layouts.json`；使用内容路由和多布局，不依赖原模板图片。
 
 RuntimeProfile 统一记录 `source_kind`、固定的 `prompt_strategy=layout-fields`、`layouts` 和 `capabilities`（routing / evidence / reference / portability）。优先级固定为：有效模板 Profile > style RuntimeProfile；模板分析没有 layouts 时必须真正回退到结构化 style，而不是只打印提示。运行时不再包含 `legacy-freeform` 或 synthetic layout 分支。
-
-## 在线模板蒸馏与闭环验证
-
-用户要求从 Slidesgo 等公开预览页筛选、评分或蒸馏模板时，使用仓库内的 `skills/web-ppt-template-distiller/SKILL.md`，不要把网页预览直接当普通 `--template-images` 批量仿作。蒸馏器只迁移抽象设计规律，不复制来源图片、Logo、人物、图标、水印、文案或独特页面组合。
-
-推荐生产路径：
-
-```text
-公开模板预览
-→ 来源质量评分
-→ 带来源证据和内容路由的结构化 style profile + 多原型 layout grammar
-→ 封面 / 章节 / 内容 / 数据验证页
-→ 页面适配 + 跨页一致性 + 复制风险评估
-→ 自动修订 profile（最多 N 轮，只有净提升才替换 champion，否则回滚）
-→ staged style
-→ 人工批准后进入 styles/
-```
-
-闭环命令：
-
-```bash
-python3 skills/web-ppt-template-distiller/scripts/score_and_distill.py \
-  --url <template-detail-url> \
-  --style-id <style-id> \
-  --name "<Style Name>" \
-  --closed-loop \
-  --max-validation-rounds 2
-```
-
-只有状态为 `validated` 的结果可以写入目标 style 目录。`validation_review` 表示达到轮次上限仍未通过，只会在 provenance 目录保留 `review-candidate.md` / `review-candidate.layouts.json`，必须人工查看 `.ppt-template-distill/provenance/<style-id>/evaluations/`；`validation_reject` 表示高复制风险或明确拒绝，不得产生正式 style。JSON profile 是权威源，Markdown 必须由 profile 渲染生成，禁止两边独立手改导致漂移。
-
-闭环自动发布还要求 `copying_risk=low`、所有角色的可读性/角色适配达标、文字准确率达到门槛，并使用 best-so-far 轮次而不是最后一次尝试。可复用角色优先提供多个带 `routing` / `evidence_pages` 的布局原型，避免把固定测试文案的项目数写成整个页面角色的唯一规则。
-
-迁移旧风格或准备正式发布时，再加 `--validation-suite generalization` 跑保留题；它会额外验证对比页和“表格＋时间线”数据页，并使用与正式生成相同的内容路由。日常低成本迭代仍可用默认 standard suite，避免每轮无条件增加图片成本。
-
-批量升级已有蒸馏风格时，使用子 Skill 的 `batch_migrate_styles.py`：它逐套恢复来源证据、跑同题旧版/新版对照、断点记录 `promoted/review/failed`，并且只允许 `migration-comparison.json` 明确晋级的 `.md + .layouts.json` 配对发布。`--publish` 会先备份旧配对；图片渠道中断时保留已生成角色页和已验证 champion，以退出码 75 暂停整个队列，恢复后从当前套续跑，不把进程退出码误当成视觉通过，也不让后续模板重复撞维护窗口。
-
-图片渠道维护期间可先用 `--prepare-only` 把证据充足的旧 profile 确定性编译到当前结构，候选只写入 migration workdir；页级证据不完整的保持 `needs-vision`。`--repair-with-vision` 只为这些歧义模板看原始预览补结构，仍不生图、不发布。所有 prepared 候选最终都必须补跑 generalization 与同题迁移门禁。
 
 ## 模板克隆模式
 
@@ -275,7 +237,7 @@ GPT_IMAGE_QUALITY=high                     # low / medium / high / auto
 ```bash
 python3 scripts/generate_ppt.py \
   --plan slides_plan.json \
-  --style styles/<id>.md \
+  --style styles/<collection>/<id>.md \
   --prepare-only \
   --output outputs/<timestamp>
 ```
@@ -349,7 +311,7 @@ print('done')
 当你用 Claude Code / OpenClaw / 其他 agent 运行本 skill，但本机装了 codex CLI 且已登录（`codex login`），可以借用它的凭据出图，省掉配 `OPENAI_API_KEY`：
 
 ```bash
-python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/editorial-mono.md --backend codex
+python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/editorial-mono.md --backend codex
 ```
 
 默认后端仍是 `openai`（直调 API，快、并发稳、每页 3-10s）。`--backend codex` 是逃生口，适合"只跑 1-2 张图试水、不想配 key"的场景。
@@ -401,11 +363,11 @@ GPT_IMAGE_BACKEND=codex              # 不想每次敲 --backend 就设这个
    ```bash
    python3 scripts/md_to_plan.py slides_plan.md -o slides_plan.json
    ```
-4. 选风格：从 `styles/` 里挑一个，对应 `styles/<id>.md`；如果使用了 recipe，优先采用 `recipe.md` / frontmatter 里的 `recommended_style`，需要视觉预览时先看 `docs/distilled-styles.md`
-5. **构造 slide_spec**（Agent 步骤）：读 `styles/<id>.md` 的视觉规范，为 `slides_plan.json` 每页构造 `slide_spec`（每个元素的 type、content、position、style），写入每页的 `slide_spec` 字段。格式见下方"指哪改哪"章节
+4. 选风格：从 `styles/initial/`、`styles/featured/` 或 `styles/xiamulingzi/` 里挑一个，对应 `styles/<collection>/<id>.md`；如果使用了 recipe，优先采用 `recipe.md` / frontmatter 里的 `recommended_style`，需要视觉预览时先看 `docs/distilled-styles.md`
+5. **构造 slide_spec**（Agent 步骤）：读 `styles/<collection>/<id>.md` 的视觉规范，为 `slides_plan.json` 每页构造 `slide_spec`（每个元素的 type、content、position、style），写入每页的 `slide_spec` 字段。格式见下方"指哪改哪"章节
 6. 调脚本：
    ```bash
-   python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/editorial-mono.md
+   python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/editorial-mono.md
    ```
 7. 产物在 `<cwd>/outputs/<timestamp>/`：
    - `images/slide-XX.png` -- 每页 PNG（16:9，1536x864）
@@ -473,7 +435,7 @@ python3 scripts/render_template.py --check
 ```bash
 python3 scripts/generate_ppt.py \
   --plan slides_plan.json \
-  --style styles/dark-aurora.md \
+  --style styles/initial/dark-aurora.md \
   --editable \
   --editable-scenes editable_scenes/
 ```
@@ -706,7 +668,7 @@ Agent 在搭 plan 时的执行策略：
    - 是否需要单页测试一张图先看效果（API 直连用 `--slides 1`；Codex 原生路径直接生成第 1 页 PNG）
 2. **先写 slides_plan.md** 给用户确认文案（md 是 source of truth，人审阅友好）
 3. **转 slides_plan.json**：`python3 scripts/md_to_plan.py slides_plan.md -o slides_plan.json`（json 标为 generated，不手改；要改文案回到 md 改再转）
-4. **构造 slide_spec**（Agent 步骤）：读 `styles/<id>.md` 了解视觉规范，然后为 `slides_plan.json` 每页构造 `slide_spec`，写入每页的 `slide_spec` 字段（格式见"指哪改哪"章节）。这一步让后续修改能精确到每个元素
+4. **构造 slide_spec**（Agent 步骤）：读 `styles/<collection>/<id>.md` 了解视觉规范，然后为 `slides_plan.json` 每页构造 `slide_spec`，写入每页的 `slide_spec` 字段（格式见"指哪改哪"章节）。这一步让后续修改能精确到每个元素
 5. **出图冒烟**：
    - API 直连 / 非 Codex 原生路径：跑 `generate_ppt.py --slides 1` 出封面冒烟，效果 OK 再跑全量
    - 当前 agent 就是带原生出图能力的 Codex：按上方“Codex 原生路径”直接调当前会话的 `image_generation` tool 生成 `outputs/<timestamp>/images/slide-01.png`；不要用 `generate_ppt.py --backend codex`
@@ -738,7 +700,7 @@ Agent 在搭 plan 时的执行策略：
 ## 仅生成部分页
 
 ```bash
-python3 scripts/generate_ppt.py --plan my_plan.json --style styles/dark-aurora.md --slides 1,3,5
+python3 scripts/generate_ppt.py --plan my_plan.json --style styles/initial/dark-aurora.md --slides 1,3,5
 ```
 
 跑过的页有同名 PNG 时会自动跳过，方便逐页迭代。
@@ -817,17 +779,15 @@ gpt-image2-ppt-skills/
 |   |---- image_generator.py      # gpt-image-2 wrapper（支持 reference image，openai backend）
 |   |---- codex_backend.py        # 可选：走 codex CLI 出图（--backend codex）
 |   \---- template_analyzer.py    # PPT 模板剖析器（vision + 缓存）
-|---- styles/                 # 所有可用风格，每个 .md 对应一个 style id
-|   |---- gradient-glass.md           dark-aurora.md
-|   |---- clean-tech-blue.md          risograph.md
-|   |---- vector-illustration.md      japanese-wabi.md
-|   |---- editorial-mono.md           swiss-grid.md
-|   |---- hand-sketch.md              y2k-chrome.md
+|---- styles/                 # 所有可用风格，每个 .md 配同名 .layouts.json
+|   |---- initial/            # 初始 10 套
+|   |---- featured/           # 精选 22 套
+|   |---- xiamulingzi/        # 网友 @夏目玲子 提供的 233 套
+|   \---- README.md           # 目录说明与调用示例
 |---- examples/               # 场景 recipes：常见 PPT 的 slides_plan.md 起步模板
 |   |---- product-launch/             investor-pitch/
 |   |---- weekly-report/              courseware/
 |   |---- thesis-defense/             book-sharing/
-|---- skills/web-ppt-template-distiller/ # 在线模板评分、蒸馏与闭环验证子 Skill
 |---- docs/README.en.md       # 英文 README
 |---- install_as_skill.sh     # 一键安装到 agent skills 目录
 |---- requirements.txt        # requests + python-dotenv + python-pptx + jsonschema + pymupdf

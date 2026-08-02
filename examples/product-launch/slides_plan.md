@@ -1,7 +1,7 @@
 ---
 title: Aurora Notes 产品发布
 scenario: product-launch
-recommended_style: gradient-glass
+recommended_style: styles/initial/gradient-glass.md
 ---
 
 ## 1. [cover] Aurora Notes

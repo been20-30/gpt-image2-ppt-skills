@@ -1,7 +1,7 @@
 ---
 title: 多模态学习系统的交互设计研究
 scenario: thesis-defense
-recommended_style: final-year-project-thesis-defense
+recommended_style: styles/featured/final-year-project-thesis-defense.md
 ---
 
 ## 1. [cover] 多模态学习系统的交互设计研究

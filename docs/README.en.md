@@ -236,6 +236,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🆕 Changelog
 
+- **2026-08-02 · 233 new PPT templates** — Added 197 Morandi-style, 26 punk-style, and 10 tech-style templates under `styles/xiamulingzi/`, expanding the library from 32 to 265 templates.
 - **2026-08-01 · Template cloning and distillation upgrade** — Unified template reuse and added multi-slide visual checks, old/new comparisons, and failure protection. All 22 historical templates now support the new workflow and will replace published versions only after a confirmed visual improvement.
 - **2026-07-29 · Online template gallery** — Current templates now live in SlideCraft Template Gallery, with search, filters, real output previews, and copy-ready prompts for AI assistants.
 - **2026-07-13 · Editable render-back and iteration policy** — `--editable` now requires a working PowerPoint, Keynote, or LibreOffice renderer, automatically emits `editable_renders/page-XX.png` for multimodal review, and uses a quality-first escalation policy with repeated low-cost checks and targeted repairs before any full-slide regeneration.
@@ -247,6 +248,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🙏 Acknowledgements
 
+- Thanks to community contributor **@夏目玲子** for providing the new PPT templates.
 - [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — upstream reference for the original style prompts and early Skill structure. This project initially replaced Nano Banana Pro with OpenAI gpt-image-2, rewrote three inherited styles, added seven more, and later expanded into template cloning, md-first authoring, PPTX packaging, and a structured style library.
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — reference for the Claude Code skill `SKILL.md` frontmatter.
 - [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — reference for template reuse and editable presentations.

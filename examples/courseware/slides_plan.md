@@ -1,7 +1,7 @@
 ---
 title: AI 写作入门课
 scenario: courseware
-recommended_style: vector-illustration
+recommended_style: styles/initial/vector-illustration.md
 ---
 
 ## 1. [cover] AI 写作入门课

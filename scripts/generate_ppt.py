@@ -858,7 +858,7 @@ def load_style_layout_profile(
     style_path: str,
     style_template: str = "",
 ) -> Optional[Dict[str, Any]]:
-    """Load styles/<id>.layouts.json as a RuntimeProfile-compatible dict."""
+    """Load a style's colocated .layouts.json as a RuntimeProfile-compatible dict."""
     sidecar = _style_layout_sidecar_path(style_path)
     if not sidecar.is_file():
         return None
@@ -3345,9 +3345,9 @@ def create_argument_parser() -> argparse.ArgumentParser:
         epilog="""
 Example usage:
   # Generate
-  python scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-glass.md
-  python scripts/generate_ppt.py --plan slides_plan.json --style styles/clean-tech-blue.md --slides 1,3,5
-  python scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-glass.md --editable --editable-scenes editable_scenes/
+  python scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/gradient-glass.md
+  python scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/clean-tech-blue.md --slides 1,3,5
+  python scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/gradient-glass.md --editable --editable-scenes editable_scenes/
 
   # Edit
   python scripts/generate_ppt.py --edit 3 --session 20240523_143052 --element-updates '{"subtitle":{"content":"新内容"}}'

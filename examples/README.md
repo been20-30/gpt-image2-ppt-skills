@@ -48,7 +48,7 @@ agent 应该：
 
 ```bash
 python3 scripts/md_to_plan.py examples/product-launch/slides_plan.md -o slides_plan.json
-python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-glass.md --slides 1
+python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/gradient-glass.md --slides 1
 ```
 
 建议先用 `--slides 1` 生成封面冒烟，确认风格和方向后再全量生成。`slides_plan.json` 是派生文件，不需要提交。
@@ -61,7 +61,7 @@ python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/gradient-
 -> 参考 recipe 写新的 slides_plan.md
 -> 用户确认文案和页数
 -> scripts/md_to_plan.py 转 slides_plan.json
--> 读取 styles/<id>.md
+-> 读取 styles/<collection>/<id>.md
 -> scripts/generate_ppt.py 生成封面冒烟
 -> 用户确认后全量生成 PPTX
 ```

@@ -8,7 +8,7 @@
 
 ```bash
 python3 scripts/md_to_plan.py examples/book-sharing/slides_plan.md -o slides_plan.json
-python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/editorial-mono.md --slides 1
+python3 scripts/generate_ppt.py --plan slides_plan.json --style styles/initial/editorial-mono.md --slides 1
 ```
 
 适合替换的内容：

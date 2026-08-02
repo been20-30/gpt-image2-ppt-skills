@@ -237,6 +237,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🆕 更新记录
 
+- **2026-08-02 · 新增 233 套 PPT 模板**：在 `styles/xiamulingzi/` 新增 197 套莫兰迪风格、26 套朋克风格和 10 套科技风格模板，模板库由 32 套扩充至 265 套。
 - **2026-08-01 · 模板克隆与蒸馏升级**：统一模板复用流程，增加多页面效果验证、新旧版对照和失败保护；22 套历史模板已适配新流程，只有确认效果提升后才会替换正式版本。
 - **2026-07-29 · 在线模板画廊**：目前收录的模板改为通过 SlideCraft Template Gallery 统一展示，支持搜索、筛选、查看真实效果和复制 Prompt 给 AI 使用。
 - **2026-07-13 · 可编辑回渲染与轮次策略**：`--editable` 现在像模板克隆一样强制检查 PowerPoint / Keynote / LibreOffice，完成后自动输出 `editable_renders/page-XX.png` 供多模态验收；工作流改为效果优先、低成本检查可多轮、生成修复逐级升级并优先局部处理。
@@ -248,6 +249,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🙏 致谢
 
+- 感谢网友 **@夏目玲子** 提供本次新增的 PPT 模板。
 - [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — 风格 prompts 与早期 Skill 结构的上游参考。本项目最初把图片后端从 Nano Banana Pro 换成 OpenAI gpt-image-2，重写 3 套继承风格并新增 7 套，后续再扩展模板克隆、md-first 编排、PPTX 打包和结构化风格库。
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — Claude Code skill SKILL.md frontmatter 写法参考。
 - [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — 模板复用与可编辑幻灯片思路参考。

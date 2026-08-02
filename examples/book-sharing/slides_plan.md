@@ -1,7 +1,7 @@
 ---
 title: 《深度工作》读书分享
 scenario: book-sharing
-recommended_style: editorial-mono
+recommended_style: styles/initial/editorial-mono.md
 ---
 
 ## 1. [cover] 《深度工作》读书分享

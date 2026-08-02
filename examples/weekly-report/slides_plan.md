@@ -1,7 +1,7 @@
 ---
 title: CityOps 项目周报
 scenario: weekly-report
-recommended_style: meeting-agenda
+recommended_style: styles/featured/meeting-agenda.md
 ---
 
 ## 1. [cover] CityOps 项目周报
