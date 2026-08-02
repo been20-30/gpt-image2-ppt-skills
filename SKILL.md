@@ -44,7 +44,7 @@ description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- u
 | `economic-impact-of-coronavirus` | 经济影响报告风、严肃信息图、冷静色彩和数据叙事 | 宏观经济、政策分析、风险报告 |
 | `eco-green-business-plan` | 鼠尾草绿、自然材质摄影、环保商务与极简分屏 | 可持续商业、环保品牌、健康生活方式 |
 
-所有可用风格都统一放在 `styles/` 下并按来源分组，使用方式完全相同：`initial/` 收录初始 10 套，`featured/` 收录精选 22 套，`xiamulingzi/` 收录网友 @夏目玲子 提供的 233 套。目录索引见 `styles/README.md`；精选风格封面展示见 `docs/distilled-styles.md`。
+所有可用风格都统一放在 `styles/` 下并按来源分组，使用方式完全相同：`initial/` 收录初始 10 套，`featured/` 收录精选 22 套，`xiamulingzi/` 收录设计师 @夏目玲子 提供的 233 套。目录索引见 `styles/README.md`；精选风格封面展示见 `docs/distilled-styles.md`。
 
 > 风格选择原则：先根据内容场景在 `styles/` 里选择最贴近的一套。技术类可优先看 `dark-aurora` / `gradient-glass` / `data-science-consulting`，商务类可优先看 `clean-tech-blue` / `editorial-mono` / `eco-green-business-plan` / `investment-company-business-plan`，文化生活类可优先看 `japanese-wabi` / `vector-illustration` / `culinary-innovation` / `flowery`，学术类可优先看 `swiss-grid` / `geometric-duotone-thesis` / `final-year-project-thesis-defense`，工作坊与培训类可优先看 `hand-sketch` / `mind-maps-workshop-professional` / `mindfulness-in-the-classroom-breathing-techniques`。
 
@@ -782,7 +782,7 @@ gpt-image2-ppt-skills/
 |---- styles/                 # 所有可用风格，每个 .md 配同名 .layouts.json
 |   |---- initial/            # 初始 10 套
 |   |---- featured/           # 精选 22 套
-|   |---- xiamulingzi/        # 网友 @夏目玲子 提供的 233 套
+|   |---- xiamulingzi/        # 设计师 @夏目玲子 提供的 233 套
 |   \---- README.md           # 目录说明与调用示例
 |---- examples/               # 场景 recipes：常见 PPT 的 slides_plan.md 起步模板
 |   |---- product-launch/             investor-pitch/

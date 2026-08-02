@@ -80,7 +80,7 @@ Claude Code / Codex / OpenClaw / Hermes 等支持 Skills 的 agent 均可原生�
 把下面这段话发给 Claude Code、Codex、OpenClaw、Cursor、Trae、Hermes Agent，或其他支持 Skills 的 AI 助手：
 
 > 帮我安装 gpt-image2-ppt-skills：<br>
-> https://raw.githubusercontent.com/JuneYaooo/gpt-image2-ppt-skills/main/docs/install.md
+> https://github.com/JuneYaooo/gpt-image2-ppt-skills
 
 AI 会根据当前环境完成安装并提示你重启。
 
@@ -248,7 +248,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🙏 致谢
 
-- 感谢网友 **@夏目玲子** 提供 233 套 PPT 模板。
+- 感谢设计师 **@夏目玲子** 提供 233 套 PPT 模板。
 - [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — 风格 prompts 与早期 Skill 结构的上游参考。本项目最初把图片后端从 Nano Banana Pro 换成 OpenAI gpt-image-2，重写 3 套继承风格并新增 7 套，后续再扩展模板克隆、md-first 编排、PPTX 打包和结构化风格库。
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — Claude Code skill SKILL.md frontmatter 写法参考。
 - [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — 模板复用与可编辑幻灯片思路参考。
