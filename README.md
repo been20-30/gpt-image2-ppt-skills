@@ -248,7 +248,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # 或 gpt-4o / claude-3.5-sonnet 等�
 
 ## 🙏 致谢
 
-- 感谢网友 **@夏目玲子** 提供本次新增的 PPT 模板。
+- 感谢网友 **@夏目玲子** 提供 233 套 PPT 模板。
 - [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — 风格 prompts 与早期 Skill 结构的上游参考。本项目最初把图片后端从 Nano Banana Pro 换成 OpenAI gpt-image-2，重写 3 套继承风格并新增 7 套，后续再扩展模板克隆、md-first 编排、PPTX 打包和结构化风格库。
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — Claude Code skill SKILL.md frontmatter 写法参考。
 - [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — 模板复用与可编辑幻灯片思路参考。

@@ -247,7 +247,7 @@ VISION_MODEL_NAME=gemini-3.1-pro-preview   # or gpt-4o / claude-3.5-sonnet, any 
 
 ## 🙏 Acknowledgements
 
-- Thanks to community contributor **@夏目玲子** for providing the new PPT templates.
+- Thanks to community contributor **@夏目玲子** for providing 233 PPT templates.
 - [op7418/NanoBanana-PPT-Skills](https://github.com/op7418/NanoBanana-PPT-Skills) — upstream reference for the original style prompts and early Skill structure. This project initially replaced Nano Banana Pro with OpenAI gpt-image-2, rewrote three inherited styles, added seven more, and later expanded into template cloning, md-first authoring, PPTX packaging, and a structured style library.
 - [lewislulu/html-ppt-skill](https://github.com/lewislulu/html-ppt-skill) — reference for the Claude Code skill `SKILL.md` frontmatter.
 - [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) — reference for template reuse and editable presentations.
