@@ -207,11 +207,13 @@ GPT_IMAGE_MODEL_NAME=gpt-image-2
 GPT_IMAGE_QUALITY=high                    # low / medium / high / auto
 ```
 
+配置优先级固定为：当前进程环境变量 > 平台注入的 `gpt-image2-ppt_*` 变量 > `GPT_IMAGE2_PPT_ENV` / skill 目录下的 `.env`；`JULING_GPT_IMAGE2_*` 只作为没有对应 `OPENAI_*` 配置时的兼容 fallback，不会覆盖显式配置。
+
 > 在 **Codex** 里如果当前 agent 自带原生图片生成能力，可以直接走 `SKILL.md` 里的原生路径，**不必配置 `OPENAI_API_KEY`**。
 >
 > 🔒 **不会误吃密钥**：脚本只读取当前进程环境、平台注入变量、显式 `GPT_IMAGE2_PPT_ENV` 和 skill 安装目录 `.env` fallback，**不会**向上递归读调用者项目目录的 `.env`。
 >
-> 🪄 模板克隆模式和可编辑模式都需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。模板克隆需要先把模板转成图片供 AI 看版式；可编辑模式需要把交付文件重新转成图片供 AI 验收。Skill 会先自动检查本机渲染能力；如果当前环境不支持，AI 会提示安装可用后端。模板克隆还可以改用手动导出的模板页面图片。
+> 🪄 模板克隆模式和可编辑模式都需要本机可执行的 PPTX 渲染后端（Windows PowerPoint / macOS Keynote / LibreOffice）。模板克隆需要先把模板转成图片供 AI 看版式；可编辑模式需要把交付文件重新转成图片供 AI 验收。`render_template.py --check` 会执行一个最小真实转换，而不是只检查程序版本；如果当前环境不支持，AI 会提示安装可用后端。模板克隆还可以改用手动导出的模板页面图片。
 
 </details>
 
