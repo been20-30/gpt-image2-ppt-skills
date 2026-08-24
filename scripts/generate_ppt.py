@@ -3654,7 +3654,15 @@ def main() -> None:
 
     with open(args.plan, "r", encoding="utf-8") as f:
         slides_plan = json.load(f)
-
+    # Presentation Intelligence is opt-in for Arabic plans or explicit plans.
+    # It enriches the existing slide objects; gpt-image-2 remains unchanged.
+    if str(slides_plan.get("language", "")).lower().startswith("ar") or slides_plan.get("intelligence_mode"):
+        try:
+            from presentation_intelligence import plan_intelligently
+            slides_plan = plan_intelligently(slides_plan)
+            print("🧠 Presentation Intelligence: story → density → strategy → typography → layout → prompt")
+        except Exception as exc:
+            raise RuntimeError(f"Presentation Intelligence failed before generation: {exc}") from exc
     if args.output:
         output_dir = args.output
     else:

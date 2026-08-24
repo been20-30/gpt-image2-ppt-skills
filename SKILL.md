@@ -106,6 +106,18 @@ When the plan contains Arabic copy or `language: ar`, load `design_system/arabic
 
 Use `python3 scripts/select_layouts.py input.json output.json` before generation to attach `layout_family`, `story_role`, and `layout_signature`. Adjacent slides must not share a layout family, and no more than one third of the deck may use card-heavy compositions. The taxonomy is stored in `design_system/layout_taxonomy.json`.
 
+## Executable Presentation Intelligence
+
+Arabic or explicitly intelligent plans run `scripts/presentation_intelligence.py` before generation. The executable chain is:
+
+`Input → Content Analysis → Story Planning → Visual Strategy → Typography Decision → Layout Allocation → Prompt Compilation → gpt-image-2 → Technical Validation → Design Critic → Repair / Regeneration → Acceptance`.
+
+For each slide it writes `story_role`, `content_density`, `visual_strategy`, `layout_family`, `composition`, `typography_decision`, `intelligence_penalties`, and `generation_instruction`. Story roles include hook, context, problem, insight, framework, process, comparison, case study, data, exercise, summary, and closing. The role determines the visual strategy; cards are not the default strategy.
+
+The planning engine selects Arabic display/body/Latin/numeric fonts, weight, size, line-height, letter spacing, text width, direction, and safe zone from audience, style, density, and role. RTL is therefore a layout decision carried into prompt compilation, not a post-processing correction.
+
+Anti-template intelligence applies penalties for adjacent family repetition and card overuse, and changes the selected family before the prompt is sent to `gpt-image-2`. It also records the penalty so the decision remains inspectable.
+
 ## Architecture: Four cooperating systems
 
 The skill is intentionally split into four systems. **Presentation Intelligence** decides story roles, art direction, style family, layout family, visual hierarchy, typography, metaphors, and information-design density before image generation. **Generation Engine** remains the existing `gpt-image-2` pipeline: RuntimeProfile, template/style handling, prompt compilation, external asset slots, PNG generation, metadata, and PPTX packaging. **Design Quality Engine** judges visual quality: typography proxy, hierarchy, composition, art direction, visual storytelling, premium score, anti-template signals, and layout repetition. **Technical Quality Engine** checks RTL declaration, safe-zone contracts, render presence, aspect ratio, overflow/alignment proxies, PPTX/render validity, and LibreOffice verification.
@@ -122,7 +134,7 @@ python3 scripts/quality_gate.py \\
   --report outputs/<run>/quality_report.json
 ```
 
-The report contains separate `design_quality` and `technical_quality` objects plus `final_decision`. The lower-scoring engine is the remediation owner.
+The report contains separate `design_quality` and `technical_quality` objects plus `design_critic` and `final_decision`. The lower-scoring engine is the remediation owner. `design_critic` turns a failure into `Problem → Cause → Recommended change → Regeneration instruction`; for example, repeated cards produce `select_layout(framework_or_editorial)` rather than only lowering a score.
 
 ## Mandatory Quality Gate
 

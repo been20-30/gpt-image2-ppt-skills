@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Independent design and technical quality engines for gpt-image2-ppt-ar-pro."""
 from __future__ import annotations
-import argparse, json, math, re
+import argparse, json, math, re, importlib.util
 from pathlib import Path
 from PIL import Image
 
@@ -11,10 +11,13 @@ def slides(plan):
     value=plan.get('slides',[]); return list(value.values()) if isinstance(value,dict) else value
 
 def design_quality(plan, ds):
-    ss=slides(plan); score={k:100 for k in ['typography','hierarchy','composition','visual_storytelling','art_direction','consistency']}; findings=[]; hard=[]; seq=[]
+    ss=slides(plan); score={k:100 for k in ['typography','hierarchy','composition','visual_storytelling','art_direction','consistency','information_design','visual_metaphor','premium_feel']}; findings=[]; hard=[]; seq=[]
     for i,s in enumerate(ss):
         family=s.get('layout_family') or s.get('composition_family') or s.get('page_type','content'); role=s.get('story_role') or 'explain'; seq.append(family)
-        if family not in FAMILIES: score['art_direction']-=10; findings.append({'severity':'warn','code':'unknown_family','slide':i+1,'message':str(family)})
+        if family not in FAMILIES: score['art_direction']-=10; score['premium_feel']-=8; findings.append({'severity':'warn','code':'unknown_family','slide':i+1,'message':str(family)})
+        if family in {'editorial','framework','process','timeline','comparison','diagram'}: score['information_design']+=0
+        if family in {'hero','big_number','quote','case_study'}: score['visual_metaphor']+=0
+
         if i and family==seq[-2]: score['composition']-=30; score['consistency']-=20; hard.append('repeated_layout'); findings.append({'severity':'hard','code':'repeated_layout','slide':i+1,'message':f'Adjacent family repeated: {family}'})
         text=str(s.get('content','')); chars=len(text)
         if chars>520: score['typography']-=min(35,math.ceil((chars-520)/40)); hard.append('text_over_budget'); findings.append({'severity':'hard','code':'text_over_budget','slide':i+1,'message':f'{chars} chars'})
@@ -44,6 +47,9 @@ def technical_quality(plan, out, ds):
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--plan',required=True); ap.add_argument('--output',required=True); ap.add_argument('--design-system',required=True); ap.add_argument('--report',required=True); a=ap.parse_args()
     plan=json.loads(Path(a.plan).read_text(encoding='utf-8')); ds=json.loads(Path(a.design_system).read_text(encoding='utf-8')); out=Path(a.output)
-    design=design_quality(plan,ds); technical=technical_quality(plan,out,ds); overall=round((design['score']+technical['score'])/2,1); hard=sorted(set(design['hard_failures']+technical['hard_failures'])); result={'tool':'gpt-image2-ppt-ar-pro quality engines','version':'2.0.0','passed':design['passed'] and technical['passed'] and not hard and overall>=80,'overall_score':overall,'design_quality':design,'technical_quality':technical,'final_decision':'deliver' if design['passed'] and technical['passed'] and overall>=80 else 'fix and render again'}
+    design=design_quality(plan,ds); technical=technical_quality(plan,out,ds)
+    critic_spec=importlib.util.spec_from_file_location('design_critic', Path(__file__).with_name('design_critic.py')); critic=importlib.util.module_from_spec(critic_spec); critic_spec.loader.exec_module(critic)
+    critique=critic.critic_from_design(design)
+    overall=round((design['score']+technical['score'])/2,1); hard=sorted(set(design['hard_failures']+technical['hard_failures'])); result={'tool':'gpt-image2-ppt-ar-pro quality engines','version':'2.1.0','passed':design['passed'] and technical['passed'] and not hard and overall>=80,'overall_score':overall,'design_quality':design,'technical_quality':technical,'design_critic':critique,'final_decision':'deliver' if design['passed'] and technical['passed'] and overall>=80 else 'fix and render again'}
     Path(a.report).parent.mkdir(parents=True,exist_ok=True); Path(a.report).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8'); print(json.dumps({'passed':result['passed'],'overall_score':overall,'report':a.report},ensure_ascii=False)); raise SystemExit(0 if result['passed'] else 2)
 if __name__=='__main__': main()
