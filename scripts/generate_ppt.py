@@ -3658,6 +3658,9 @@ def main() -> None:
     # It enriches the existing slide objects; gpt-image-2 remains unchanged.
     if str(slides_plan.get("language", "")).lower().startswith("ar") or slides_plan.get("intelligence_mode"):
         try:
+            from design_knowledge import knowledge_bundle
+            knowledge=knowledge_bundle({'audience':slides_plan.get('audience','professional'),'purpose':slides_plan.get('purpose',slides_plan.get('scenario','teaching')),'tone':slides_plan.get('tone','clear'),'content_type':slides_plan.get('content_type','mixed'),'industry':slides_plan.get('industry','')})
+            slides_plan['design_knowledge']=knowledge
             from style_intelligence import select_style
             requested=slides_plan.get("requested_style") or Path(style_path).stem if style_path else ""
             slides_plan["style_profile"] = select_style(
@@ -3665,6 +3668,7 @@ def main() -> None:
                 purpose=slides_plan.get("purpose", slides_plan.get("scenario", "teaching")),
                 tone=slides_plan.get("tone", "clear"), content_type=slides_plan.get("content_type", "mixed"),
                 requested_style=requested,
+                knowledge=knowledge,
             )
             from presentation_intelligence import plan_intelligently
             slides_plan = plan_intelligently(slides_plan)
@@ -3830,6 +3834,7 @@ def main() -> None:
                 f"Composition family: {directed_family or 'editorial'}\n"
                 f"Narrative role: {story_role or 'explain'}\n"
                 f"Layout signature: {layout_signature or 'rtl-text-first'}\n"
+                f"Knowledge bundle: {', '.join(x.get('entity', {}).get('id','') for x in slides_plan.get('design_knowledge', {}).get('selected', [])[:6])}\n"
                 f"Style profile: {slides_plan.get('style_profile', {}).get('id', 'selected-style')}\n"
                 f"Color philosophy: {slides_plan.get('style_profile', {}).get('color_philosophy', 'restrained contrast')}\n"
                 f"Typography philosophy: {slides_plan.get('style_profile', {}).get('typography_philosophy', 'legible hierarchy')}\n"

@@ -10,9 +10,14 @@ def load_profiles(path=None):
     p=Path(path) if path else DEFAULT
     return json.loads(p.read_text(encoding='utf-8'))
 
-def select_style(topic='', audience='professional', purpose='teaching', tone='clear', content_type='mixed', requested_style='', profiles=None):
+def select_style(topic='', audience='professional', purpose='teaching', tone='clear', content_type='mixed', requested_style='', profiles=None, knowledge=None):
     data=profiles or load_profiles(); items=data['profiles']; selection=data.get('selection',{}); scores={k:0 for k in items}; text=f'{topic} {content_type} {tone}'.lower()
     if requested_style in items: scores[requested_style]+=100
+    if knowledge:
+        for selected in knowledge.get('selected',[]):
+            for candidate in selected.get('entity',{}).get('relationships',{}).get('style',[]):
+                if candidate in scores: scores[candidate]+=8
+
     for kw, names in selection.get('topic_keywords',{}).items():
         if kw in text:
             for n in names: scores[n]+=4
@@ -27,5 +32,5 @@ def select_style(topic='', audience='professional', purpose='teaching', tone='cl
     return profile
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument('--topic',default=''); ap.add_argument('--audience',default='professional'); ap.add_argument('--purpose',default='teaching'); ap.add_argument('--tone',default='clear'); ap.add_argument('--content-type',default='mixed'); ap.add_argument('--requested-style',default=''); ap.add_argument('--output',required=True); a=ap.parse_args(); out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True); out.write_text(json.dumps(select_style(a.topic,a.audience,a.purpose,a.tone,a.content_type,a.requested_style),ensure_ascii=False,indent=2),encoding='utf-8'); print(json.dumps({'style':json.loads(out.read_text())['id'],'output':str(out)},ensure_ascii=False))
+    ap=argparse.ArgumentParser(); ap.add_argument('--topic',default=''); ap.add_argument('--audience',default='professional'); ap.add_argument('--purpose',default='teaching'); ap.add_argument('--tone',default='clear'); ap.add_argument('--content-type',default='mixed'); ap.add_argument('--requested-style',default=''); ap.add_argument('--output',required=True); ap.add_argument('--knowledge'); a=ap.parse_args(); out=Path(a.output); out.parent.mkdir(parents=True,exist_ok=True); knowledge=json.loads(Path(a.knowledge).read_text(encoding='utf-8')) if a.knowledge else None; out.write_text(json.dumps(select_style(a.topic,a.audience,a.purpose,a.tone,a.content_type,a.requested_style,knowledge=knowledge),ensure_ascii=False,indent=2),encoding='utf-8'); print(json.dumps({'style':json.loads(out.read_text())['id'],'output':str(out)},ensure_ascii=False))
 if __name__=='__main__': main()
