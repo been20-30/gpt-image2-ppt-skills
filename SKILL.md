@@ -1,11 +1,11 @@
 ---
-name: gpt-image2-ppt
-description: Generate visually striking PPT slides via OpenAI's gpt-image-2 -- use any style in styles/<collection>/STYLE_ID.md or mimic a user-supplied .pptx template; outputs high-res slide PNGs and a 16:9 .pptx. Use when the user asks to make a presentation, slides, deck, pitch deck, investor PPT, magazine-style PPT, or 做一份 PPT / 生成幻灯片 / 用 gpt-image 生成 PPT / 按这个模板生成 PPT.
+name: gpt-image2-ppt-ar-pro
+description: Generate professional Arabic-first PowerPoint slides with OpenAI's gpt-image-2, preserving the existing style/template pipeline while adding RTL, Arabic typography, safe text zones, layout intelligence, visual critique, and a machine-readable quality gate.
 ---
 
-# gpt-image2-ppt -- 用 gpt-image-2 生成 PPT
+# gpt-image2-ppt-ar-pro — 用 gpt-image-2 生成专业阿拉伯语 PPT
 
-把一份 markdown 大纲（或 `slides_plan.json`）+ 一种视觉风格，直接喂给 OpenAI 官方 Images API（`gpt-image-2`），逐页出图，最后打包成 16:9 .pptx。
+把一份 markdown 大纲（或 `slides_plan.json`）+ 一种视觉风格，直接喂给 OpenAI 官方 Images API（`gpt-image-2`），逐页出图，最后打包成 16:9 .pptx。对于阿拉伯语内容，版本 `gpt-image2-ppt-ar-pro` 在同一引擎上增加 Arabic Design System、RTL、Safe Text Zone、Layout Intelligence、Visual Critic 与 Quality Gate。
 
 ## 可用风格
 
@@ -99,6 +99,30 @@ styles/<collection>/<style-id>.layouts.json  # 必需；每页 layout bank，供
 - `distilled-style`：来自 `<style>.md` + `<style>.layouts.json`；使用内容路由和多布局，不依赖原模板图片。
 
 RuntimeProfile 统一记录 `source_kind`、固定的 `prompt_strategy=layout-fields`、`layouts` 和 `capabilities`（routing / evidence / reference / portability）。优先级固定为：有效模板 Profile > style RuntimeProfile；模板分析没有 layouts 时必须真正回退到结构化 style，而不是只打印提示。运行时不再包含 `legacy-freeform` 或 synthetic layout 分支。
+
+## Arabic Pro Design System
+
+When the plan contains Arabic copy or `language: ar`, load `design_system/arabic_design_system.json`. It defines conservative Arabic font pairing, type scale, spacing, contrast floors, and a protected safe text zone. Use Noto Kufi Arabic for titles, IBM Plex Sans Arabic for body copy, and IBM Plex Sans for isolated numbers, dates, code, and chart axes. Keep Arabic copy in the reading direction and never mirror diagrams blindly.
+
+Use `python3 scripts/select_layouts.py input.json output.json` before generation to attach `layout_family`, `story_role`, and `layout_signature`. Adjacent slides must not share a layout family, and no more than one third of the deck may use card-heavy compositions. The taxonomy is stored in `design_system/layout_taxonomy.json`.
+
+## Mandatory Quality Gate
+
+The delivery workflow is:
+
+`Generate → Render → Inspect → Typography Check → RTL Check → Contrast Check → Spacing Check → Composition Check → Layout Repetition Check → Professionalism Score → Fix → Render Again`.
+
+Run the machine-readable gate after rendering:
+
+```bash
+python3 scripts/quality_gate.py \\
+  --plan slides_plan.json \\
+  --output outputs/<run>/ \\
+  --design-system design_system/arabic_design_system.json \\
+  --report outputs/<run>/quality_report.json
+```
+
+A deck is not successful merely because a PPTX exists. The gate rejects missing renders, undeclared RTL, repeated layouts, over-budget text, and low-contrast render proxies; the report must be reviewed together with the rendered images. If text conflicts with imagery, move or rebuild the imagery rather than shrinking the Arabic text.
 
 ## 模板克隆模式
 

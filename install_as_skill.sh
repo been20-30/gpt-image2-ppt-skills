@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# gpt-image2-ppt-skills -- Claude Code / Codex Skill 安装脚本
+# gpt-image2-ppt-ar-pro -- Claude Code / Codex Skill 安装脚本
 #
 # 把当前仓库内容拷贝到目标 skill 目录
 # 并安装 Python 依赖、提示环境变量注入方式。
@@ -74,10 +74,10 @@ resolve_install_target() {
 resolve_skill_dir() {
     case "$1" in
         claude)
-            echo "$HOME/.claude/skills/gpt-image2-ppt-skills"
+            echo "$HOME/.claude/skills/gpt-image2-ppt-ar-pro"
             ;;
         codex)
-            echo "${CODEX_HOME:-$HOME/.codex}/skills/gpt-image2-ppt-skills"
+            echo "${CODEX_HOME:-$HOME/.codex}/skills/gpt-image2-ppt-ar-pro"
             ;;
         openclaw)
             echo "$HOME/skills/gpt-image2-ppt"
@@ -102,7 +102,7 @@ resolve_agent_label() {
 main() {
     parse_args "$@"
 
-    print_header "gpt-image2-ppt-skills -- 安装"
+    print_header "gpt-image2-ppt-ar-pro -- 安装"
 
     INSTALL_TARGET="$(resolve_install_target)"
     SKILL_DIR="$(resolve_skill_dir "$INSTALL_TARGET")"
@@ -173,9 +173,13 @@ main() {
 
     print_info "安装 Python 依赖..."
     if command_exists pip3; then
-        pip3 install -q -r "$SKILL_DIR/requirements.txt"
+        if [ "$(id -u)" -eq 0 ]; then
+            pip3 install -q -r "$SKILL_DIR/requirements.txt"
+        else
+            sudo pip3 install -q -r "$SKILL_DIR/requirements.txt"
+        fi
     else
-        pip install -q -r "$SKILL_DIR/requirements.txt"
+        sudo pip install -q -r "$SKILL_DIR/requirements.txt"
     fi
     print_success "依赖安装完成"
 

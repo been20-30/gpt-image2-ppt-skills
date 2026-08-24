@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "families": [
+    {"id":"hero","story_role":"establish","visual_signature":"one dominant title with restrained supporting copy","best_for":["cover","opening"]},
+    {"id":"editorial","story_role":"frame","visual_signature":"asymmetric text-led composition with a strong reading column","best_for":["context","argument"]},
+    {"id":"full_bleed","story_role":"immerse","visual_signature":"full-bleed image with protected text band","best_for":["case study","transition"]},
+    {"id":"framework","story_role":"explain","visual_signature":"structured model with 3-5 labeled parts","best_for":["method","concept"]},
+    {"id":"timeline","story_role":"sequence","visual_signature":"chronological path with directional progression","best_for":["history","roadmap"]},
+    {"id":"process","story_role":"instruct","visual_signature":"numbered steps with clear start/end","best_for":["how-to","workflow"]},
+    {"id":"comparison","story_role":"contrast","visual_signature":"two-sided comparison, not card grid","best_for":["before-after","tradeoff"]},
+    {"id":"big_number","story_role":"emphasize","visual_signature":"single metric with evidence and context","best_for":["data","result"]},
+    {"id":"quote","story_role":"humanize","visual_signature":"large quote with attribution and breathing room","best_for":["insight","voice"]},
+    {"id":"case_study","story_role":"prove","visual_signature":"situation-action-result narrative","best_for":["example","application"]},
+    {"id":"diagram","story_role":"map","visual_signature":"spatial relationship diagram with labels","best_for":["architecture","system"]},
+    {"id":"checklist","story_role":"activate","visual_signature":"short actionable list with one emphasized next step","best_for":["exercise","takeaway"]},
+    {"id":"closing","story_role":"land","visual_signature":"one memorable conclusion and next action","best_for":["closing","call-to-action"]}
+  ],
+  "allocation_rules": {"same_family_gap": 2, "max_consecutive_same_family": 1, "max_card_slides_ratio": 0.33, "prefer_non_card_families": ["editorial","full_bleed","timeline","process","quote","diagram"]}
+}

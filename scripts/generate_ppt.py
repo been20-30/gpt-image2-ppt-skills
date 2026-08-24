@@ -716,7 +716,7 @@ def generate_prompt_from_spec(
         + f"现在请生成本组中的【{label}】，{hint}{layout_line}"
         + "\n\n本页各元素的精确描述（请严格按以下布局、位置、样式生成）：\n\n"
         + elements_text
-        + LANGUAGE_FONT_RULE
+        + _language_design_rule(" ".join(str(e.get("content", "")) for e in elements.values()))
     )
 
 
@@ -973,6 +973,22 @@ LANGUAGE_FONT_RULE = """
 3. 标题字体粗体，正文字体常规，字号对比清晰，确保在演示场景下可读性极高。
 """
 
+ARABIC_DESIGN_RULE = """
+【Arabic Pro Design System — highest priority when Arabic copy is present】
+- Arabic is the primary reading layer: use Noto Kufi Arabic for titles and IBM Plex Sans Arabic for body copy; use IBM Plex Sans for isolated numbers, dates, code, and chart axes.
+- Declare Arabic RTL, align copy to the reading edge, and keep numbers/charts/code directionally isolated LTR. Never mirror a diagram blindly.
+- Protect a generous safe text zone with at least 8% inset on every side and keep visual assets outside it. If artwork conflicts with text, move or rebuild the artwork; never shrink or crop Arabic text to make it fit.
+- Use strong hierarchy: title 28–44 pt equivalent, body 14–20 pt, captions 10–13 pt, title line-height near 1.08 and body line-height near 1.45. Keep body copy concise and high contrast (preferred contrast ratio 7:1; never pale gray on white).
+- Use editorial, timeline, process, comparison, quote, diagram, big-number, and full-bleed compositions in addition to cards. Do not repeat the same composition family on adjacent slides.
+- Render and inspect every slide. Reject cropped, low-contrast, text-dense, visually empty, or repeated-layout slides and regenerate them.
+"""
+
+def _arabic_present(text: str) -> bool:
+    return bool(re.search(r"[\u0600-\u06FF\u0750-\u077F]", text or ""))
+
+def _language_design_rule(text: str) -> str:
+    return ARABIC_DESIGN_RULE if _arabic_present(text) else LANGUAGE_FONT_RULE
+
 
 def generate_prompt(
     style_template: str,
@@ -1016,7 +1032,7 @@ def generate_prompt(
         + f"现在请生成本组中的【{label}】，{hint}\n"
         + "本页要呈现的内容如下（请按本风格美学重新设计版式，不要原样照搬文本节奏）：\n\n"
         + content_text
-        + LANGUAGE_FONT_RULE
+        + _language_design_rule(content_text)
     )
 
 
@@ -1046,7 +1062,7 @@ def compile_runtime_slide_prompt(
         profile=runtime_profile,
         layout=matched_layout,
         fields=fields,
-        language_rule=LANGUAGE_FONT_RULE.strip(),
+        language_rule=_language_design_rule(str(slide_info)).strip(),
     )
     if external_slots:
         prompt = adapt_template_prompt_for_external_slots(prompt, external_slots)
@@ -3788,6 +3804,17 @@ def main() -> None:
         if strict_reference_mode and matched_layout:
             reference_image = matched_layout.get("reference_image")
 
+        directed_family = slide_info.get("layout_family") or slide_info.get("composition_family")
+        story_role = slide_info.get("story_role")
+        layout_signature = slide_info.get("layout_signature")
+        if directed_family or story_role:
+            prompt += (
+                "\n\n【Arabic Pro art direction directive】\n"
+                f"Composition family: {directed_family or 'editorial'}\n"
+                f"Narrative role: {story_role or 'explain'}\n"
+                f"Layout signature: {layout_signature or 'rtl-text-first'}\n"
+                "Do not reuse the adjacent slide's composition; use this family as the dominant structure.\n"
+            )
         if generation_reference_images:
             prompt += _format_generation_reference_constraint(generation_reference_images)
 
@@ -3813,6 +3840,9 @@ def main() -> None:
             "generation_reference_images": generation_reference_images,
             "asset_reference_image": asset_reference_image,
             "layout_id": matched_layout_id,
+            "layout_family": slide_info.get("layout_family"),
+            "story_role": slide_info.get("story_role"),
+            "layout_signature": slide_info.get("layout_signature"),
             "slide_spec": slide_spec,
         })
 

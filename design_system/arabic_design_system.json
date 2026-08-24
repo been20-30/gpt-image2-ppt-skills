@@ -1,0 +1,19 @@
+{
+  "name": "gpt-image2-ppt-ar-pro",
+  "version": "1.0.0",
+  "language": "ar",
+  "direction": "rtl",
+  "priority": "text-first",
+  "fonts": {
+    "heading": {"family": "Noto Kufi Arabic", "fallback": ["IBM Plex Sans Arabic", "Arial"], "weights": [700, 800], "usage": "titles, section heads"},
+    "body": {"family": "IBM Plex Sans Arabic", "fallback": ["Noto Sans Arabic", "Arial"], "weights": [400, 500, 600], "usage": "body, captions, labels"},
+    "numbers": {"family": "IBM Plex Sans", "fallback": ["Arial", "sans-serif"], "weights": [500, 600, 700], "usage": "metrics, dates, chart axes"}
+  },
+  "type_scale": {"title_pt": {"min": 28, "max": 44}, "subtitle_pt": {"min": 18, "max": 26}, "body_pt": {"min": 14, "max": 20}, "caption_pt": {"min": 10, "max": 13}, "line_height": {"title": 1.08, "body": 1.45}},
+  "safe_text_zone": {"left": 0.08, "right": 0.08, "top": 0.08, "bottom": 0.08, "max_coverage": 0.62, "min_padding_px": 28},
+  "contrast": {"minimum_body_ratio": 4.5, "minimum_large_ratio": 3.0, "preferred_ratio": 7.0, "never_use": ["light-gray-on-white", "thin-white-on-yellow"]},
+  "spacing": {"unit_px": 8, "gutter_px": 32, "section_gap_px": 48, "minimum_text_gap_px": 20},
+  "rtl_rules": ["Set document direction to rtl.", "Keep numbers, dates, code, and chart geometry ltr/isolate.", "Align Arabic copy to the reading edge; do not mirror diagrams blindly.", "Move imagery away from the protected text zone when overlap occurs."],
+  "art_direction": {"max_consecutive_same_family": 1, "preferred_families": ["hero", "editorial", "full_bleed", "framework", "timeline", "process", "comparison", "big_number", "quote", "case_study", "diagram", "checklist", "closing"], "card_budget": "at_most_one_third_of_slides"},
+  "quality_gate": {"minimum_score": 80, "hard_fail": ["missing_render", "text_outside_safe_zone", "low_contrast", "cropped_text", "rtl_not_declared", "repeated_layout"]}
+}
