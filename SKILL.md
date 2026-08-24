@@ -106,6 +106,24 @@ When the plan contains Arabic copy or `language: ar`, load `design_system/arabic
 
 Use `python3 scripts/select_layouts.py input.json output.json` before generation to attach `layout_family`, `story_role`, and `layout_signature`. Adjacent slides must not share a layout family, and no more than one third of the deck may use card-heavy compositions. The taxonomy is stored in `design_system/layout_taxonomy.json`.
 
+## Architecture: Four cooperating systems
+
+The skill is intentionally split into four systems. **Presentation Intelligence** decides story roles, art direction, style family, layout family, visual hierarchy, typography, metaphors, and information-design density before image generation. **Generation Engine** remains the existing `gpt-image-2` pipeline: RuntimeProfile, template/style handling, prompt compilation, external asset slots, PNG generation, metadata, and PPTX packaging. **Design Quality Engine** judges visual quality: typography proxy, hierarchy, composition, art direction, visual storytelling, premium score, anti-template signals, and layout repetition. **Technical Quality Engine** checks RTL declaration, safe-zone contracts, render presence, aspect ratio, overflow/alignment proxies, PPTX/render validity, and LibreOffice verification.
+
+The two quality engines must not be conflated. A technically valid PPTX may still fail design quality, and a visually strong image may still fail technical quality. The final decision is the intersection of both engines, not a replacement for either one.
+
+Run the independent engines together through the compatibility command:
+
+```bash
+python3 scripts/quality_gate.py \\
+  --plan slides_plan.json \\
+  --output outputs/<run>/ \\
+  --design-system design_system/arabic_design_system.json \\
+  --report outputs/<run>/quality_report.json
+```
+
+The report contains separate `design_quality` and `technical_quality` objects plus `final_decision`. The lower-scoring engine is the remediation owner.
+
 ## Mandatory Quality Gate
 
 The delivery workflow is:
@@ -122,7 +140,7 @@ python3 scripts/quality_gate.py \\
   --report outputs/<run>/quality_report.json
 ```
 
-A deck is not successful merely because a PPTX exists. The gate rejects missing renders, undeclared RTL, repeated layouts, over-budget text, and low-contrast render proxies; the report must be reviewed together with the rendered images. If text conflicts with imagery, move or rebuild the imagery rather than shrinking the Arabic text.
+A deck is not successful merely because a PPTX exists. Technical validity and design professionalism are separate acceptance gates. If text conflicts with imagery, move or rebuild the imagery rather than shrinking the Arabic text. For architecture details and scoring semantics, see `docs/arabic-pro-design-system.md` and `scripts/quality_engine.py`.
 
 ## 模板克隆模式
 
