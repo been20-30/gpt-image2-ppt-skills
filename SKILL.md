@@ -106,7 +106,14 @@ When the plan contains Arabic copy or `language: ar`, load `design_system/arabic
 
 Use `python3 scripts/select_layouts.py input.json output.json` before generation to attach `layout_family`, `story_role`, and `layout_signature`. Adjacent slides must not share a layout family, and no more than one third of the deck may use card-heavy compositions. The taxonomy is stored in `design_system/layout_taxonomy.json`.
 
-## Executable Presentation Intelligence
+## Stage 3: executable design intelligence
+
+Stage 3 extends the planner beyond keyword-to-role rules. `scripts/presentation_intelligence.py` now emits `intent`, `argument`, `information_type`, `audience_need`, `content_density`, `visual_focal_point`, `information_flow`, `visual_metaphor`, `image_strategy`, `text_strategy`, and `composition_balance`. It uses deterministic semantic signals with an explicit fallback for ambiguous content, then applies the configurable rules in `design_system/intelligence_config.json`.
+
+`Typography Intelligence 2.0` reads font pairs, role mapping, density scales, audience deltas, weights, and safe-zone limits from configuration. `Layout Intelligence 2.0` considers role, density, information type, audience, style, and the previous selected family; penalties for repetition and card overuse alter the next composition before prompt compilation.
+
+`Structural Critic` evaluates metadata and planning structure. `Visual Critic` evaluates rendered PNGs when available and records image evidence such as luminance spread and non-background occupancy. Every design criterion is represented as a score with evidence, finding, and severity. Acceptance is split into `technical_pass`, `design_pass`, and `premium_pass`; a high technical score cannot mask a low design score.
+
 
 Arabic or explicitly intelligent plans run `scripts/presentation_intelligence.py` before generation. The executable chain is:
 
@@ -134,7 +141,7 @@ python3 scripts/quality_gate.py \\
   --report outputs/<run>/quality_report.json
 ```
 
-The report contains separate `design_quality` and `technical_quality` objects plus `design_critic` and `final_decision`. The lower-scoring engine is the remediation owner. `design_critic` turns a failure into `Problem → Cause → Recommended change → Regeneration instruction`; for example, repeated cards produce `select_layout(framework_or_editorial)` rather than only lowering a score.
+The report contains separate `design_quality` and `technical_quality` objects plus `structural_critic`, `visual_critic`, `technical_pass`, `design_pass`, `premium_pass`, and `final_decision`. The lower-scoring engine is the remediation owner. Critics turn a failure into `Problem → Evidence → Cause → Severity → Recommended change → Regeneration strategy`; for example, repeated cards produce `select_layout(framework_or_editorial)` rather than only lowering a score.
 
 ## Mandatory Quality Gate
 

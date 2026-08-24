@@ -1,0 +1,51 @@
+{
+  "version": "3.0.0",
+  "story_roles": {
+    "hook": {"visual_strategy": "hero", "information_types": ["claim", "question"], "need": "attention"},
+    "context": {"visual_strategy": "editorial", "information_types": ["background", "definition"], "need": "orientation"},
+    "problem": {"visual_strategy": "comparison", "information_types": ["pain_point", "gap"], "need": "tension"},
+    "insight": {"visual_strategy": "typography-led", "information_types": ["claim", "principle"], "need": "meaning"},
+    "framework": {"visual_strategy": "framework", "information_types": ["model", "taxonomy"], "need": "structure"},
+    "process": {"visual_strategy": "timeline", "information_types": ["sequence", "steps"], "need": "action"},
+    "comparison": {"visual_strategy": "comparison", "information_types": ["contrast", "tradeoff"], "need": "choice"},
+    "case_study": {"visual_strategy": "editorial", "information_types": ["example", "evidence"], "need": "proof"},
+    "data": {"visual_strategy": "big_number", "information_types": ["metric", "trend"], "need": "evidence"},
+    "exercise": {"visual_strategy": "diagram", "information_types": ["instruction", "activity"], "need": "participation"},
+    "summary": {"visual_strategy": "checklist", "information_types": ["recap", "recommendation"], "need": "retention"},
+    "closing": {"visual_strategy": "hero", "information_types": ["call_to_action", "claim"], "need": "action"}
+  },
+  "audiences": {
+    "executive": {"max_density": "moderate", "title_size_delta": 3, "text_width": "48%"},
+    "professional": {"max_density": "moderate", "title_size_delta": 0, "text_width": "58%"},
+    "academic": {"max_density": "dense", "title_size_delta": -2, "text_width": "62%"},
+    "student": {"max_density": "moderate", "title_size_delta": 1, "text_width": "60%"}
+  },
+  "typography": {
+    "font_pairs": {
+      "arabic_editorial": {"display": "Noto Kufi Arabic", "body": "IBM Plex Sans Arabic", "latin": "IBM Plex Sans", "numeric": "IBM Plex Sans"},
+      "arabic_formal": {"display": "IBM Plex Sans Arabic", "body": "IBM Plex Sans Arabic", "latin": "IBM Plex Sans", "numeric": "IBM Plex Sans"}
+    },
+    "roles": {"hook": "arabic_editorial", "closing": "arabic_editorial", "data": "arabic_formal", "default": "arabic_formal"},
+    "density": {"sparse": {"title": 40, "body": 20, "line_height": 1.35}, "moderate": {"title": 34, "body": 17, "line_height": 1.3}, "dense": {"title": 28, "body": 14, "line_height": 1.2}},
+    "weights": {"display": 800, "body": 500},
+    "safe_zone": "8%",
+    "max_text_ratio": 0.62,
+    "max_text_chars": 520
+  },
+  "layout_preferences": {
+    "avoid_adjacent_repeat": true,
+    "max_card_ratio": 0.33,
+    "families": ["hero", "editorial", "full_bleed", "framework", "timeline", "process", "comparison", "big_number", "quote", "case_study", "diagram", "checklist", "closing"]
+  },
+  "visual_strategy": {
+    "hero": {"focal_point": "single dominant visual", "flow": "focal_to_claim", "metaphor": "symbolic scene", "image": "one_hero_image", "text": "minimal_claim", "balance": "70_visual_30_text"},
+    "editorial": {"focal_point": "editorial anchor", "flow": "anchor_to_explanation", "metaphor": "contextual juxtaposition", "image": "selective_image", "text": "hierarchical_copy", "balance": "50_visual_50_text"},
+    "framework": {"focal_point": "model structure", "flow": "top_down_logic", "metaphor": "system_map", "image": "diagram_first", "text": "labels_only", "balance": "60_structure_40_text"},
+    "timeline": {"focal_point": "sequence spine", "flow": "ordered_progression", "metaphor": "path_or_rhythm", "image": "minimal_support", "text": "step_labels", "balance": "65_structure_35_text"},
+    "comparison": {"focal_point": "decision axis", "flow": "left_right_contrast", "metaphor": "tension_or_tradeoff", "image": "paired_visuals", "text": "parallel_short_copy", "balance": "50_50"},
+    "big_number": {"focal_point": "single metric", "flow": "number_to_meaning", "metaphor": "scale_or_signal", "image": "abstract_support", "text": "interpretation", "balance": "60_number_40_text"},
+    "typography-led": {"focal_point": "statement", "flow": "claim_to_implication", "metaphor": "type_as_image", "image": "none_or_subtle", "text": "large_statement", "balance": "20_visual_80_text"},
+    "checklist": {"focal_point": "completion path", "flow": "scan_down", "metaphor": "progress", "image": "none", "text": "short_actions", "balance": "30_visual_70_text"}
+  },
+  "acceptance": {"technical_min": 80, "design_min": 80, "premium_min": 85, "premium_requires_both": true}
+}
