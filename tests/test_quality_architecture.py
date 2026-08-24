@@ -14,6 +14,13 @@ def plan(families, language='ar'):
     return {'language':language,'direction':'rtl','slides':[{'slide_number':i+1,'content':'عنوان عربي واضح\nنص مختصر للاختبار','layout_family':f,'story_role':'explain'} for i,f in enumerate(families)]}
 
 
+def test_style_selection_is_data_driven():
+    spec=importlib.util.spec_from_file_location('si',ROOT/'scripts/style_intelligence.py'); si=importlib.util.module_from_spec(spec); spec.loader.exec_module(si)
+    p=si.select_style(topic='technology',audience='developer',purpose='launch',tone='bold',content_type='mixed')
+    assert p['id'] in {'dark-aurora','gradient-glass'}
+    assert p['visual_identity'] and p['shape_language'] and p['forbidden_patterns']
+
+
 def test_story_intelligence_emits_executable_decision_chain():
     result=pi.plan_intelligently({'language':'ar','audience':'executive','slides':[{'slide_number':1,'content':'المشكلة هي بطء القرار ونحتاج إلى إطار واضح.'},{'slide_number':2,'content':'ثلاث خطوات عملية لتحسين القرار.'}]})
     first=result['slides'][0]
@@ -21,6 +28,12 @@ def test_story_intelligence_emits_executable_decision_chain():
     for key in ['intent','argument','information_type','audience_need','content_density','visual_strategy','visual_focal_point','information_flow','visual_metaphor','image_strategy','text_strategy','composition_balance','typography_decision','generation_instruction']:
         assert key in first and first[key] is not None, key
     assert result['presentation_intelligence']['pipeline'][-1]=='prompt_compilation'
+
+
+def test_composition_grammar_is_emitted():
+    result=pi.plan_intelligently({'language':'ar','slides':[{'content':'إطار عملي واضح للقرار.'}]})
+    s=result['slides'][0]
+    assert s['visual_focal_point'] and s['information_flow'] and s['composition_balance']
 
 
 def test_typography_is_configuration_driven():
@@ -69,6 +82,12 @@ def test_technical_engine_rejects_missing_rtl():
         result=qe.technical_quality({'language':'en','direction':'ltr','slides':[{'content':'x'}]}, Path(d), {})
         assert result['passed'] is False
         assert 'rtl_not_declared' in result['hard_failures']
+
+
+def test_style_profile_changes_prompt_compilation():
+    result=pi.plan_intelligently({'language':'ar','style':'gradient-glass','slides':[{'content':'عنوان مختصر'}]})
+    assert result['slides'][0]['typography_decision']['display_font']
+    assert result['slides'][0]['visual_strategy']
 
 
 def test_visual_critic_emits_render_evidence():
