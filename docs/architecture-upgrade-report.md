@@ -56,3 +56,13 @@ Arabic plans activate the Arabic design system. Headings use a specified Arabic 
 The second architecture stage adds `scripts/presentation_intelligence.py`. It turns each slide into a decision chain: story role → content density → visual strategy → typography decision → layout family → composition → generation instruction. The resulting fields are consumed by `generate_ppt.py` and appended to the gpt-image-2 prompt, so the intelligence changes generation behavior rather than acting as documentation.
 
 The stage also adds `scripts/design_critic.py`. It converts design failures into actionable repairs with a problem, cause, recommended change, and regeneration instruction. `quality_engine.py` now includes independent dimensions for information design, visual metaphor, and premium feel, and the final report carries the critic output alongside separate design and technical results.
+
+## Stage 4 — Design System Intelligence
+
+Stage 4 adds `design_system/style_profiles.json`, `design_system/composition_grammar.json`, and `scripts/style_intelligence.py`. A Style Profile now describes visual identity, color and typography philosophy, font pair, type scale, spacing, border/radius, image and illustration treatment, shape language, density, whitespace, composition preference, acceptable families, forbidden patterns, and focal-point behavior.
+
+`style_intelligence.select_style()` scores topic, audience, purpose, tone, content type, and requested style. The selected profile is injected into the existing `gpt-image-2` prompt with color philosophy, typography philosophy, image treatment, shape language, focal behavior, forbidden patterns, and composition preference. No new template library was added.
+
+Composition Grammar describes focal point, anchor, supporting element, reading path, whitespace/text/image zones, balance, scale relationship, and hierarchy. The configuration is intentionally separate from layout family names so two editorial slides can have different composition grammars.
+
+Stage 4 also extends tests to verify data-driven style selection, emitted composition grammar, prompt influence, and existing Stage 3 behavior. The full test suite passes without generating a new Demo.
